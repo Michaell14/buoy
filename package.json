@@ -58,7 +58,7 @@
     "prepublishOnly": "npm run check",
     "lint:package": "publint && attw --pack . --exclude-entrypoints styles.css",
     "site": "node website/build.mjs --serve",
-    "site:build": "tsc -p website && node website/build.mjs"
+    "site:build": "tsc -p website && tsc -p website/registry && node website/build.mjs"
   },
   "peerDependencies": {
     "react": ">=18"

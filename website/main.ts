@@ -247,6 +247,14 @@ buoy('Link copied', { icon: 'link' });`,
 mount();
 
 buoy('Link copied', { icon: 'link' });`,
+  shadcn: `// npx shadcn@latest add https://buoy-ui.vercel.app/r/buoy.json
+import { Buoy, buoy } from '@/components/ui/buoy';
+
+export default function App() {
+  return <Buoy />;
+}
+
+buoy('Link copied', { icon: 'link' });`,
   script: `<script src="https://unpkg.com/buoy-ui/dist/buoy.global.js"></script>
 <script>
   const { buoy, mount } = window.Buoy;

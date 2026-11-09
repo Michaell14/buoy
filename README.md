@@ -21,6 +21,14 @@ Messages, loading states and upload progress share one surface at the top of the
 npm install buoy-ui
 ```
 
+Or `pnpm add buoy-ui`, `yarn add buoy-ui` or `bun add buoy-ui`. In Deno, import from `npm:buoy-ui`.
+
+With [shadcn/ui](https://ui.shadcn.com), this installs the package with your package manager and adds `components/ui/buoy.tsx`, which uses your app's font and follows its dark mode:
+
+```bash
+npx shadcn@latest add https://buoy-ui.vercel.app/r/buoy.json
+```
+
 ## Quick start (React)
 
 Render `<Buoy />` once, near the root. Then call `buoy()` from anywhere: components, effects, plain functions.

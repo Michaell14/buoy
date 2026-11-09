@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "declaration": false,
+    "noEmit": true,
+    "paths": { "buoy-ui": ["../../src/index.ts"] }
+  },
+  "include": ["buoy.tsx"]
+}
