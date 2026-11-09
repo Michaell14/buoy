@@ -97,7 +97,7 @@
     "type": "git",
     "url": "git+https://github.com/Michaell14/buoy.git"
   },
-  "homepage": "https://github.com/Michaell14/buoy#readme",
+  "homepage": "https://buoy-ui.vercel.app",
   "bugs": {
     "url": "https://github.com/Michaell14/buoy/issues"
   }
