@@ -1,6 +1,6 @@
 # Buoy
 
-[![CI](https://github.com/Michaell14/buoy/actions/workflows/ci.yml/badge.svg)](https://github.com/Michaell14/buoy/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/buoy-ui)](https://www.npmjs.com/package/buoy-ui) [![CI](https://github.com/Michaell14/buoy/actions/workflows/ci.yml/badge.svg)](https://github.com/Michaell14/buoy/actions/workflows/ci.yml)
 
 A morphing island for notifications, promises and background tasks.
 
