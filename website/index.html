@@ -37,9 +37,19 @@
 <section class="hero" aria-labelledby="title">
 <div class="wordmark"><h1 id="title">Buoy</h1></div>
 <p class="tagline">An island for your notifications, promises <span>and background work.</span></p>
+<div class="install">
+<div class="pm" role="group" aria-label="Package manager">
+<button type="button" class="pm-option" data-pm="npm" aria-pressed="true">npm</button>
+<button type="button" class="pm-option" data-pm="pnpm" aria-pressed="false">pnpm</button>
+<button type="button" class="pm-option" data-pm="yarn" aria-pressed="false">yarn</button>
+<button type="button" class="pm-option" data-pm="bun" aria-pressed="false">bun</button>
+<button type="button" class="pm-option" data-pm="shadcn" aria-pressed="false">shadcn</button>
+</div>
 <div class="ctas">
-<button type="button" class="btn btn-ink" id="install" aria-label="Copy the install command, npm i buoy-ui"><code id="install-text">npm i buoy-ui</code><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 8.5v-2a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/></svg></button>
+<button type="button" class="btn btn-ink" id="install" aria-label="Copy npm i buoy-ui"><code id="install-text">npm i buoy-ui</code><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 8.5v-2a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/></svg></button>
 <a class="btn btn-line" href="https://github.com/Michaell14/buoy">Star on GitHub</a>
+</div>
+<p class="install-note" id="install-note"></p>
 </div>
 </section>
 
@@ -117,9 +127,12 @@ setInterval(() =&gt; timer.refresh(), 1000);</code></pre>
 <div class="code-bar">
 <div class="tabs" role="tablist" aria-label="Setup">
 <button type="button" role="tab" id="tab-react" aria-selected="true" aria-controls="usage-panel" data-tab="react">React</button>
+<button type="button" role="tab" id="tab-next" aria-selected="false" aria-controls="usage-panel" data-tab="next" tabindex="-1">Next.js</button>
+<button type="button" role="tab" id="tab-vue" aria-selected="false" aria-controls="usage-panel" data-tab="vue" tabindex="-1">Vue</button>
+<button type="button" role="tab" id="tab-svelte" aria-selected="false" aria-controls="usage-panel" data-tab="svelte" tabindex="-1">Svelte</button>
+<button type="button" role="tab" id="tab-solid" aria-selected="false" aria-controls="usage-panel" data-tab="solid" tabindex="-1">Solid</button>
 <button type="button" role="tab" id="tab-vanilla" aria-selected="false" aria-controls="usage-panel" data-tab="vanilla" tabindex="-1">Vanilla</button>
 <button type="button" role="tab" id="tab-script" aria-selected="false" aria-controls="usage-panel" data-tab="script" tabindex="-1">Script tag</button>
-<button type="button" role="tab" id="tab-shadcn" aria-selected="false" aria-controls="usage-panel" data-tab="shadcn" tabindex="-1">shadcn</button>
 </div>
 <button type="button" class="code-copy" id="usage-copy">Copy</button>
 </div>

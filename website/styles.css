@@ -19,6 +19,7 @@
   --success-chip: rgba(52, 211, 153, 0.16);
   --accent-chip: rgba(45, 212, 191, 0.18);
   --island-shadow: 0 10px 22px -12px rgba(0, 0, 0, 0.6);
+  --seg-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--line);
   --glass: rgba(255, 255, 255, 0.66);
   --glass-edge: rgba(255, 255, 255, 0.7);
   --glass-shadow: 0 10px 22px -12px rgba(0, 0, 0, 0.4);
@@ -145,7 +146,24 @@ p { text-wrap: pretty; }
   text-wrap: balance;
 }
 .tagline span { color: var(--soft); }
-.ctas { margin-top: 26px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.install { margin-top: 26px; max-width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.pm { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--tile); }
+.pm-option {
+  height: 38px;
+  min-width: 54px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  font: 500 13px/1 var(--mono);
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s, box-shadow 0.15s;
+}
+.pm-option:hover { color: var(--ink); }
+.pm-option[aria-pressed="true"] { background: var(--paper); color: var(--ink); box-shadow: var(--seg-shadow); }
+.ctas { max-width: 100%; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.install-note { margin: 0; min-height: 21px; font-size: 13px; line-height: 21px; color: var(--muted); }
 .btn {
   height: 44px;
   display: inline-flex;
@@ -159,7 +177,9 @@ p { text-wrap: pretty; }
 }
 .btn-ink { padding-right: 16px; border: 0; background: var(--ink); color: var(--paper); }
 .btn-ink:hover { background: var(--ink-hover); }
-.btn-ink code { font-size: 14px; font-weight: 400; }
+.btn-ink { max-width: 100%; }
+.btn-ink code { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 400; }
+.btn-ink svg { flex: none; }
 .btn-ink svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.7; }
 .btn-line { border: 1px solid var(--line); background: var(--paper); color: var(--ink); }
 .btn-line:hover { border-color: var(--ink); color: var(--ink); }

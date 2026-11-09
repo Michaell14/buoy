@@ -26,7 +26,7 @@ const $$ = <T extends HTMLElement = HTMLElement>(selector: string) => Array.from
 
 const escape = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const TOKENS =
-  /(\/\/[^\n]*)|('(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*")|(&lt;\/?)([A-Za-z][\w.-]*)|\b(const|let|import|from|export|default|function|return|await|async|new)\b|([A-Za-z_$][\w$]*)(?=\()/g;
+  /(\/\/[^\n]*|&lt;!--[\s\S]*?--&gt;)|('(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*")|(&lt;\/?)([A-Za-z][\w.-]*)|\b(const|let|import|from|export|default|function|return|await|async|new)\b|([A-Za-z_$][\w$]*)(?=\()/g;
 
 function highlight(source: string): string {
   return escape(source).replace(TOKENS, (match, comment, string, open, tag, keyword, call) => {
@@ -75,7 +75,28 @@ function copy(text: string, element: HTMLElement) {
 
 // The island greets visitors, then holds the install command until the first demo replaces it for good.
 const WELCOME = 'welcome';
-const INSTALL = 'npm i buoy-ui';
+// The hero's package-manager picker. The choice is remembered for the next visit.
+const COMMANDS: Record<string, string> = {
+  npm: 'npm i buoy-ui',
+  pnpm: 'pnpm add buoy-ui',
+  yarn: 'yarn add buoy-ui',
+  bun: 'bun add buoy-ui',
+  shadcn: 'npx shadcn@latest add https://buoy-ui.vercel.app/r/buoy.json',
+};
+const NOTES: Record<string, string> = {
+  shadcn: "Adds components/ui/buoy.tsx, which follows your app's font and dark mode.",
+};
+function remember(key: string, value?: string): string | null {
+  try {
+    if (value !== undefined) localStorage.setItem(key, value);
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+let manager = remember('buoy-pm') ?? 'npm';
+if (!(manager in COMMANDS)) manager = 'npm';
+const installCommand = () => COMMANDS[manager];
 const LOGO =
   '<svg viewBox="0 0 32 32" aria-hidden="true" focusable="false"><circle cx="16" cy="16" r="11" fill="none" transform="rotate(-60 16 16)" style="stroke: var(--a-accent); stroke-width: 4.5; stroke-linecap: round; stroke-dasharray: 54 70"/><rect x="9" y="12.5" width="14" height="7" rx="3.5" fill="currentColor"/></svg>';
 const PROMPT =
@@ -83,14 +104,16 @@ const PROMPT =
 
 let welcoming = true;
 let welcomeTimer = 0;
+let installShown = false;
 
 function showInstall() {
   if (!welcoming) return;
-  buoy(INSTALL, { id: WELCOME, icon: PROMPT, persist: true, action: { label: 'Copy', onClick: copyFromIsland } });
+  installShown = true;
+  buoy(installCommand(), { id: WELCOME, icon: PROMPT, persist: true, action: { label: 'Copy', onClick: copyFromIsland } });
 }
 
 function copyFromIsland() {
-  copy(INSTALL, $('#install-text'));
+  copy(installCommand(), $('#install-text'));
 }
 
 /**
@@ -230,7 +253,24 @@ liveChips.forEach((chip) =>
 );
 setCode(liveCall, LIVE_CALLS.timer);
 
-$('#install').addEventListener('click', () => copy(INSTALL, $('#install-text')));
+$('#install').addEventListener('click', () => copy(installCommand(), $('#install-text')));
+
+/* ───── Install picker ───── */
+
+const managerButtons = $$<HTMLButtonElement>('[data-pm]');
+function pickManager(next: string, save: boolean) {
+  manager = next;
+  const command = installCommand();
+  $('#install-text').textContent = command;
+  $('#install').setAttribute('aria-label', `Copy ${command}`);
+  $('#install-note').textContent = NOTES[next] ?? '';
+  managerButtons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pm === next)));
+  if (save) remember('buoy-pm', next);
+  // While the island is holding the install command, it shows the one you picked.
+  if (welcoming && installShown) showInstall();
+}
+managerButtons.forEach((b) => b.addEventListener('click', () => pickManager(b.dataset.pm!, true)));
+pickManager(manager, false);
 
 /* ───── Setup tabs ───── */
 
@@ -242,17 +282,56 @@ export default function App() {
 }
 
 buoy('Link copied', { icon: 'link' });`,
-  vanilla: `import { buoy, mount } from 'buoy-ui/vanilla';
+  next: `// app/layout.tsx
+import { Buoy } from 'buoy-ui';
 
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        <Buoy />
+      </body>
+    </html>
+  );
+}
+
+// Then call buoy() from any client component.`,
+  vue: `// main.ts
+import { createApp } from 'vue';
+import { buoy, mount } from 'buoy-ui/vanilla';
+import App from './App.vue';
+
+createApp(App).mount('#app');
 mount();
 
 buoy('Link copied', { icon: 'link' });`,
-  shadcn: `// npx shadcn@latest add https://buoy-ui.vercel.app/r/buoy.json
-import { Buoy, buoy } from '@/components/ui/buoy';
+  svelte: `<!-- App.svelte -->
+<script>
+  import { onMount } from 'svelte';
+  import { buoy, mount } from 'buoy-ui/vanilla';
+
+  onMount(() => {
+    const island = mount();
+    return () => island.destroy();
+  });
+</script>
+
+<button onclick={() => buoy('Link copied', { icon: 'link' })}>Copy link</button>`,
+  solid: `// App.tsx
+import { onCleanup, onMount } from 'solid-js';
+import { buoy, mount } from 'buoy-ui/vanilla';
 
 export default function App() {
-  return <Buoy />;
-}
+  onMount(() => {
+    const island = mount();
+    onCleanup(() => island.destroy());
+  });
+  return <button onClick={() => buoy('Link copied', { icon: 'link' })}>Copy link</button>;
+}`,
+  vanilla: `import { buoy, mount } from 'buoy-ui/vanilla';
+
+mount();
 
 buoy('Link copied', { icon: 'link' });`,
   script: `<script src="https://unpkg.com/buoy-ui/dist/buoy.global.js"></script>
@@ -277,6 +356,7 @@ function selectTab(tab: HTMLButtonElement, focus: boolean) {
   });
   panel.setAttribute('aria-labelledby', tab.id);
   setCode(usageCode, SETUP[setup]);
+  remember('buoy-framework', setup);
   if (focus) tab.focus();
 }
 tabs.forEach((tab, i) => {
@@ -289,7 +369,9 @@ tabs.forEach((tab, i) => {
     selectTab(tabs[keys[event.key]], true);
   });
 });
-setCode(usageCode, SETUP.react);
+const savedTab = tabs.find((t) => t.dataset.tab === remember('buoy-framework'));
+if (savedTab) selectTab(savedTab, false);
+else setCode(usageCode, SETUP.react);
 $('#usage-copy').addEventListener('click', () => copy(SETUP[setup], usageCode));
 
 /* ───── Themes ───── */

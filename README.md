@@ -269,6 +269,8 @@ island.configure({ position: 'bottom' });
 island.destroy();
 ```
 
+In Vue, Svelte, Solid or any other framework, call `mount()` once when your app starts (for example in `onMount`), then `buoy()` from anywhere.
+
 Or from a CDN:
 
 ```html
