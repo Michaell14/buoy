@@ -3,7 +3,6 @@
 import { buoy, mount } from '../src/vanilla';
 import type { TaskContext, Theme } from '../src/vanilla';
 import { LIVE_CALLS, onLiveChange, toggleLive, type LiveName } from './live';
-import { startSea } from './sea';
 
 const $ = <T extends HTMLElement = HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
 const $$ = <T extends HTMLElement = HTMLElement>(selector: string) => Array.from(document.querySelectorAll<T>(selector));
@@ -109,20 +108,6 @@ function remember(key: string, value?: string): string | null {
     return null;
   }
 }
-/* ───── Sea ───── */
-
-startSea({
-  band: sea,
-  canvas: $<HTMLCanvasElement>('.sea-gl'),
-  calm: [$('.tagline'), $('.install')],
-  head: $('.head'),
-  toggle: $<HTMLButtonElement>('#sea-toggle'),
-  paused: remember('buoy-motion') === 'paused',
-  onToggle: (paused) => remember('buoy-motion', paused ? 'paused' : 'on'),
-});
-
-/* ───── Install command ───── */
-
 let manager = remember('buoy-pm') ?? 'npm';
 if (!(manager in COMMANDS)) manager = 'npm';
 const installCommand = () => COMMANDS[manager];
