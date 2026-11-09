@@ -84,7 +84,7 @@ const COMMANDS: Record<string, string> = {
   shadcn: 'npx shadcn@latest add https://buoy-ui.vercel.app/r/buoy.json',
 };
 const NOTES: Record<string, string> = {
-  shadcn: "Adds components/ui/buoy.tsx, which follows your app's font and dark mode.",
+  shadcn: 'Adds components/ui/buoy.tsx, matched to your theme.',
 };
 function remember(key: string, value?: string): string | null {
   try {
@@ -269,6 +269,7 @@ function pickManager(next: string, save: boolean) {
   // While the island is holding the install command, it shows the one you picked.
   if (welcoming && installShown) showInstall();
 }
+$('#install').style.setProperty('--command-chars', String(Math.max(...Object.values(COMMANDS).map((c) => c.length))));
 managerButtons.forEach((b) => b.addEventListener('click', () => pickManager(b.dataset.pm!, true)));
 pickManager(manager, false);
 

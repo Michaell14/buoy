@@ -19,6 +19,7 @@
   --success-chip: rgba(52, 211, 153, 0.16);
   --accent-chip: rgba(45, 212, 191, 0.18);
   --island-shadow: 0 10px 22px -12px rgba(0, 0, 0, 0.6);
+  --on-ink-muted: rgba(255, 255, 255, 0.45);
   --seg-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--line);
   --glass: rgba(255, 255, 255, 0.66);
   --glass-edge: rgba(255, 255, 255, 0.7);
@@ -179,6 +180,10 @@ p { text-wrap: pretty; }
 .btn-ink:hover { background: var(--ink-hover); }
 .btn-ink { max-width: 100%; }
 .btn-ink code { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 400; }
+/* The command bar keeps one width for every package manager: wide enough for the longest command. */
+#install { gap: 10px; }
+#install-text { width: calc(var(--command-chars, 60) * 1ch); text-align: left; }
+.prompt { font-family: var(--mono); font-size: 14px; color: var(--on-ink-muted); }
 .btn-ink svg { flex: none; }
 .btn-ink svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.7; }
 .btn-line { border: 1px solid var(--line); background: var(--paper); color: var(--ink); }
@@ -538,6 +543,10 @@ p { text-wrap: pretty; }
 
 /* ───── Phones ───── */
 @media (max-width: 640px) {
+  .install { align-self: stretch; }
+  .ctas { width: 100%; }
+  #install { width: 100%; }
+  #install-text { width: auto; flex: 1; }
   .head { grid-template-columns: 1fr auto; row-gap: 0; }
   .head-gap { grid-column: 1 / -1; grid-row: 1; justify-self: center; height: 46px; }
   .hero { padding-top: 40px; }
