@@ -180,9 +180,10 @@ p { text-wrap: pretty; }
 .btn-ink:hover { background: var(--ink-hover); }
 .btn-ink { max-width: 100%; }
 .btn-ink code { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 400; }
-/* The command bar keeps one width for every package manager: wide enough for the longest command. */
+/* The command bar keeps one width for every package manager. Package manager commands fit;
+   the long shadcn one ends in an ellipsis and is shown whole on hover and copied whole. */
 #install { gap: 10px; }
-#install-text { width: calc(var(--command-chars, 60) * 1ch); text-align: left; }
+#install-text { width: 23ch; text-align: left; }
 .prompt { font-family: var(--mono); font-size: 14px; color: var(--on-ink-muted); }
 .btn-ink svg { flex: none; }
 .btn-ink svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.7; }
@@ -543,10 +544,6 @@ p { text-wrap: pretty; }
 
 /* ───── Phones ───── */
 @media (max-width: 640px) {
-  .install { align-self: stretch; }
-  .ctas { width: 100%; }
-  #install { width: 100%; }
-  #install-text { width: auto; flex: 1; }
   .head { grid-template-columns: 1fr auto; row-gap: 0; }
   .head-gap { grid-column: 1 / -1; grid-row: 1; justify-self: center; height: 46px; }
   .hero { padding-top: 40px; }

@@ -263,13 +263,13 @@ function pickManager(next: string, save: boolean) {
   const command = installCommand();
   $('#install-text').textContent = command;
   $('#install').setAttribute('aria-label', `Copy ${command}`);
+  $('#install').title = command;
   $('#install-note').textContent = NOTES[next] ?? '';
   managerButtons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pm === next)));
   if (save) remember('buoy-pm', next);
   // While the island is holding the install command, it shows the one you picked.
   if (welcoming && installShown) showInstall();
 }
-$('#install').style.setProperty('--command-chars', String(Math.max(...Object.values(COMMANDS).map((c) => c.length))));
 managerButtons.forEach((b) => b.addEventListener('click', () => pickManager(b.dataset.pm!, true)));
 pickManager(manager, false);
 
