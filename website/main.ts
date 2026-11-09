@@ -1,6 +1,6 @@
 // The website's script. It imports the package source rather than a published build,
 // so the island on the site is always the code on main.
-import { atoll, mount } from '../src/vanilla';
+import { buoy, mount } from '../src/vanilla';
 import type { TaskContext, Theme } from '../src/vanilla';
 
 mount({
@@ -60,10 +60,10 @@ function copy(text: string, element: HTMLElement) {
     done = Promise.reject(error);
   }
   done.then(
-    () => atoll('Copied to clipboard', { icon: 'copy' }),
+    () => buoy('Copied to clipboard', { icon: 'copy' }),
     () => {
       selectText(element);
-      atoll.warn("Couldn't copy here", { description: 'The text is selected, so you can copy it yourself.', expanded: true });
+      buoy.warn("Couldn't copy here", { description: 'The text is selected, so you can copy it yourself.', expanded: true });
     },
   );
 }
@@ -89,60 +89,60 @@ function pretendUpload(megabytes: number, speed: number) {
 }
 
 function upload(name: string, megabytes: number, speed: number) {
-  return atoll.track(pretendUpload(megabytes, speed), {
+  return buoy.track(pretendUpload(megabytes, speed), {
     label: name,
     total: megabytes * 1e6,
     icon: /\.(heic|png|jpe?g|webp)$/i.test(name) ? 'image' : 'file',
     doneLabel: 'Uploaded just now',
-    onOpen: (task) => atoll(`Opened ${task.label}`, { icon: 'open' }),
+    onOpen: (task) => buoy(`Opened ${task.label}`, { icon: 'open' }),
   });
 }
 
-const busy = () => atoll.tasks().some((t) => t.status === 'running' || t.status === 'queued' || t.status === 'paused');
+const busy = () => buoy.tasks().some((t) => t.status === 'running' || t.status === 'queued' || t.status === 'paused');
 
 const DEMOS: Record<string, { call: string; run: () => void }> = {
   message: {
-    call: "atoll('Link copied', { icon: 'link' });",
-    run: () => atoll('Link copied', { icon: 'link' }),
+    call: "buoy('Link copied', { icon: 'link' });",
+    run: () => buoy('Link copied', { icon: 'link' }),
   },
   promise: {
-    call: "atoll.promise(save(), { loading: 'Saving…', success: 'Saved to drafts' });",
-    run: () => void atoll.promise(save(1400), { loading: 'Saving…', success: 'Saved to drafts', error: "Couldn't save" }),
+    call: "buoy.promise(save(), { loading: 'Saving…', success: 'Saved to drafts' });",
+    run: () => void buoy.promise(save(1400), { loading: 'Saving…', success: 'Saved to drafts', error: "Couldn't save" }),
   },
   expanded: {
-    call: "atoll('Export ready', { description, actions, expanded: true });",
+    call: "buoy('Export ready', { description, actions, expanded: true });",
     run: () =>
-      atoll('Export ready', {
+      buoy('Export ready', {
         description: 'Q3-report.pdf · 4.2 MB',
         icon: 'file',
         tone: 'accent',
         expanded: true,
         actions: [
-          { label: 'Open', primary: true, onClick: () => atoll('Opened Q3-report.pdf', { icon: 'open' }) },
-          { label: 'Show in folder', onClick: () => atoll('Showing Q3-report.pdf in Downloads', { icon: 'folder' }) },
+          { label: 'Open', primary: true, onClick: () => buoy('Opened Q3-report.pdf', { icon: 'open' }) },
+          { label: 'Show in folder', onClick: () => buoy('Showing Q3-report.pdf in Downloads', { icon: 'folder' }) },
         ],
       }),
   },
   error: {
-    call: "atoll.error(\"Couldn't save\", { action: { label: 'Retry', onClick: retry } });",
+    call: "buoy.error(\"Couldn't save\", { action: { label: 'Retry', onClick: retry } });",
     run: () =>
-      atoll.error("Couldn't save", {
-        action: { label: 'Retry', onClick: () => void atoll.promise(save(1100), { loading: 'Saving…', success: 'Saved to drafts' }) },
+      buoy.error("Couldn't save", {
+        action: { label: 'Retry', onClick: () => void buoy.promise(save(1100), { loading: 'Saving…', success: 'Saved to drafts' }) },
       }),
   },
   upload: {
-    call: 'atoll.track((task) => upload(file, task), { label: file.name });',
+    call: 'buoy.track((task) => upload(file, task), { label: file.name });',
     run: () => upload('beach-sunset.heic', 24, 3.4),
   },
   two: {
-    call: "atoll('Message sent', { icon: 'send' }); // while an upload runs",
+    call: "buoy('Message sent', { icon: 'send' }); // while an upload runs",
     run: () => {
       if (busy()) {
-        atoll('Message sent', { icon: 'send' });
+        buoy('Message sent', { icon: 'send' });
         return;
       }
       upload('holiday-video.mov', 48, 5.5);
-      setTimeout(() => atoll('Message sent', { icon: 'send' }), 700);
+      setTimeout(() => buoy('Message sent', { icon: 'send' }), 700);
     },
   },
 };
@@ -162,28 +162,28 @@ chips.forEach((chip) =>
 );
 showCall('message');
 
-$('#install').addEventListener('click', () => copy('npm i atoll-ui', $('#install-text')));
+$('#install').addEventListener('click', () => copy('npm i buoy-ui', $('#install-text')));
 
 /* ───── Setup tabs ───── */
 
 const SETUP: Record<string, string> = {
-  react: `import { Atoll, atoll } from 'atoll-ui';
+  react: `import { Buoy, buoy } from 'buoy-ui';
 
 export default function App() {
-  return <Atoll />;
+  return <Buoy />;
 }
 
-atoll('Link copied', { icon: 'link' });`,
-  vanilla: `import { atoll, mount } from 'atoll-ui/vanilla';
+buoy('Link copied', { icon: 'link' });`,
+  vanilla: `import { buoy, mount } from 'buoy-ui/vanilla';
 
 mount();
 
-atoll('Link copied', { icon: 'link' });`,
-  script: `<script src="https://unpkg.com/atoll-ui/dist/atoll.global.js"></script>
+buoy('Link copied', { icon: 'link' });`,
+  script: `<script src="https://unpkg.com/buoy-ui/dist/buoy.global.js"></script>
 <script>
-  const { atoll, mount } = window.Atoll;
+  const { buoy, mount } = window.Buoy;
   mount();
-  atoll('Link copied', { icon: 'link' });
+  buoy('Link copied', { icon: 'link' });
 </script>`,
 };
 
@@ -224,10 +224,10 @@ const themeCall = $('#theme-call');
 themeButtons.forEach((button) =>
   button.addEventListener('click', () => {
     const theme = button.dataset.themeName as Theme;
-    atoll.configure({ theme });
+    buoy.configure({ theme });
     themeButtons.forEach((b) => b.setAttribute('aria-pressed', String(b === button)));
-    setCode(themeCall, `<Atoll theme="${theme}" />`);
-    atoll(`Switched to ${NAMES[theme]}`, { icon: 'check' });
+    setCode(themeCall, `<Buoy theme="${theme}" />`);
+    buoy(`Switched to ${NAMES[theme]}`, { icon: 'check' });
   }),
 );
-setCode(themeCall, '<Atoll theme="ink" />');
+setCode(themeCall, '<Buoy theme="ink" />');

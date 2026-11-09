@@ -8,14 +8,14 @@ describe('island', () => {
   it('mounts, shows a message, announces it and cleans up', async () => {
     const store = createStore();
     const island = createIsland(store);
-    expect(document.querySelectorAll('.atoll')).toHaveLength(1);
+    expect(document.querySelectorAll('.buoy')).toHaveLength(1);
     store.push('Link copied', { icon: 'link' });
     await settle();
-    expect(island.element.querySelector('.atoll-shell')?.textContent).toContain('Link copied');
-    expect(island.element.querySelector('.atoll-sr')?.textContent).toBe('Link copied');
+    expect(island.element.querySelector('.buoy-shell')?.textContent).toContain('Link copied');
+    expect(island.element.querySelector('.buoy-sr')?.textContent).toBe('Link copied');
     island.destroy();
-    expect(document.querySelector('.atoll')).toBeNull();
-    expect(document.querySelector('[data-atoll-goo]')).toBeNull();
+    expect(document.querySelector('.buoy')).toBeNull();
+    expect(document.querySelector('[data-buoy-goo]')).toBeNull();
   });
 
   it('reflects options as attributes', async () => {
@@ -24,11 +24,11 @@ describe('island', () => {
     store.configure({ theme: 'notch', position: 'bottom', richColors: true, colorScheme: 'dark', offset: 20 });
     await settle();
     const el = island.element;
-    expect(el.dataset.atollTheme).toBe('notch');
+    expect(el.dataset.buoyTheme).toBe('notch');
     expect(el.dataset.position).toBe('bottom');
     expect(el.dataset.rich).toBe('true');
     expect(el.dataset.scheme).toBe('dark');
-    expect(el.style.getPropertyValue('--atoll-offset')).toBe('20px');
+    expect(el.style.getPropertyValue('--buoy-offset')).toBe('20px');
     island.destroy();
   });
 
@@ -38,7 +38,7 @@ describe('island', () => {
     store.push('<img src=x onerror=alert(1)>');
     await settle();
     expect(island.element.querySelector('img')).toBeNull();
-    expect(island.element.querySelector('.atoll-title')?.textContent).toBe('<img src=x onerror=alert(1)>');
+    expect(island.element.querySelector('.buoy-title')?.textContent).toBe('<img src=x onerror=alert(1)>');
     island.destroy();
   });
 
@@ -59,11 +59,11 @@ describe('island', () => {
     const island = createIsland(store);
     store.track(() => new Promise(() => {}), { label: 'big-file.zip', total: 100 });
     await settle();
-    const live = island.element.querySelector<HTMLButtonElement>('.atoll-live');
+    const live = island.element.querySelector<HTMLButtonElement>('.buoy-live');
     expect(live?.textContent).toContain('big-file.zip');
     live!.click();
     await settle();
-    const tray = island.element.querySelector('.atoll-tray');
+    const tray = island.element.querySelector('.buoy-tray');
     expect(tray).not.toBeNull();
     expect(tray?.textContent).toContain('1 running');
     expect(tray?.textContent).toContain('big-file.zip');

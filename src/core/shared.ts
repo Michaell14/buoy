@@ -8,7 +8,7 @@ interface Shared {
 }
 
 // One store per page, even if two copies of the package end up bundled (ESM + CJS, or two versions).
-const KEY = Symbol.for('atoll-ui');
+const KEY = Symbol.for('buoy-ui');
 
 export function shared(): Shared {
   const g = globalThis as unknown as Record<symbol, Shared | undefined>;

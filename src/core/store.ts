@@ -1,6 +1,6 @@
 import { clamp, frac } from './format';
 import type {
-  AtollOptions,
+  BuoyOptions,
   ColorScheme,
   Labels,
   MessageAction,
@@ -133,7 +133,7 @@ export function createStore() {
   // Timers stay paused until an island is attached, so nothing expires unseen.
   const pauses = new Set<string>(['detached']);
   let seq = 0;
-  const uid = (prefix: string) => `atoll-${prefix}${++seq}`;
+  const uid = (prefix: string) => `buoy-${prefix}${++seq}`;
   const now = () => Date.now();
 
   function emit(event: StoreEvent = 'change', message?: Msg) {
@@ -154,7 +154,7 @@ export function createStore() {
 
   /* ───── Options ───── */
 
-  function configure(options: AtollOptions = {}) {
+  function configure(options: BuoyOptions = {}) {
     const { labels, ...rest } = options;
     const target = cfg as unknown as Record<string, unknown>;
     let changed = false;
@@ -372,7 +372,7 @@ export function createStore() {
     if (clearDone) state.tasks = state.tasks.filter((t) => t.status !== 'done');
   }
   function track(run: (task: TaskContext) => unknown, o: TrackOptions = {}): TaskHandle {
-    if (typeof run !== 'function') throw new TypeError('atoll.track() needs a function that does the work.');
+    if (typeof run !== 'function') throw new TypeError('buoy.track() needs a function that does the work.');
     if (!active().length) newBatch(true);
     const t: Task = {
       id: uid('t'),

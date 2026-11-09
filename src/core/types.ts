@@ -116,7 +116,7 @@ export interface Labels {
   doneMany: (count: number) => string;
 }
 
-export interface AtollOptions {
+export interface BuoyOptions {
   theme?: Theme;
   position?: Position;
   resting?: Resting;
@@ -140,21 +140,21 @@ export interface AtollOptions {
   labels?: Partial<Labels>;
 }
 
-export interface MountOptions extends AtollOptions {
+export interface MountOptions extends BuoyOptions {
   /** Element to render into. Defaults to document.body. */
   container?: HTMLElement | null;
-  /** Add the stylesheet automatically. Set to false if you import `atoll-ui/styles.css` yourself. */
+  /** Add the stylesheet automatically. Set to false if you import `buoy-ui/styles.css` yourself. */
   injectStyles?: boolean;
   /** Nonce for the injected <style> tag, for strict Content Security Policies. */
   nonce?: string;
 }
 
 export interface MountHandle {
-  configure(options: AtollOptions): void;
+  configure(options: BuoyOptions): void;
   destroy(): void;
 }
 
-export interface Atoll {
+export interface Buoy {
   /** Show a message. Returns its id. */
   (title: string, options?: MessageOptions): string;
   success(title: string, options?: MessageOptions): string;
@@ -171,6 +171,6 @@ export interface Atoll {
   /** A snapshot of all tasks. */
   tasks(): TaskInfo[];
   tray: { open(): void; close(): void; toggle(): void };
-  /** Change options without React. With React, pass props to <Atoll /> instead. */
-  configure(options: AtollOptions): void;
+  /** Change options without React. With React, pass props to <Buoy /> instead. */
+  configure(options: BuoyOptions): void;
 }

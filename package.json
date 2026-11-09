@@ -1,5 +1,5 @@
 {
-  "name": "atoll-ui",
+  "name": "buoy-ui",
   "version": "0.1.0",
   "description": "A morphing island for notifications, promises and background tasks. For React, or no framework at all.",
   "license": "MIT",
@@ -13,8 +13,8 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "unpkg": "./dist/atoll.global.js",
-  "jsdelivr": "./dist/atoll.global.js",
+  "unpkg": "./dist/buoy.global.js",
+  "jsdelivr": "./dist/buoy.global.js",
   "typesVersions": {
     "*": {
       "vanilla": [
@@ -95,10 +95,10 @@
   "author": "Michael Li",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Michaell14/atoll.git"
+    "url": "git+https://github.com/Michaell14/buoy.git"
   },
-  "homepage": "https://github.com/Michaell14/atoll#readme",
+  "homepage": "https://github.com/Michaell14/buoy#readme",
   "bugs": {
-    "url": "https://github.com/Michaell14/atoll/issues"
+    "url": "https://github.com/Michaell14/buoy/issues"
   }
 }

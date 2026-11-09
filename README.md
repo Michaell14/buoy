@@ -1,6 +1,6 @@
-# Atoll
+# Buoy
 
-[![CI](https://github.com/Michaell14/atoll/actions/workflows/ci.yml/badge.svg)](https://github.com/Michaell14/atoll/actions/workflows/ci.yml)
+[![CI](https://github.com/Michaell14/buoy/actions/workflows/ci.yml/badge.svg)](https://github.com/Michaell14/buoy/actions/workflows/ci.yml)
 
 A morphing island for notifications, promises and background tasks.
 
@@ -16,38 +16,38 @@ Messages, loading states and upload progress share one surface at the top of the
 ## Install
 
 ```bash
-npm install atoll-ui
+npm install buoy-ui
 ```
 
 ## Quick start (React)
 
-Render `<Atoll />` once, near the root. Then call `atoll()` from anywhere: components, effects, plain functions.
+Render `<Buoy />` once, near the root. Then call `buoy()` from anywhere: components, effects, plain functions.
 
 ```tsx
-import { Atoll, atoll } from 'atoll-ui';
+import { Buoy, buoy } from 'buoy-ui';
 
 export default function App() {
   return (
     <>
-      <Atoll />
-      <button onClick={() => atoll('Link copied', { icon: 'link' })}>Copy link</button>
+      <Buoy />
+      <button onClick={() => buoy('Link copied', { icon: 'link' })}>Copy link</button>
     </>
   );
 }
 ```
 
-`<Atoll />` renders nothing inside your component tree. The island lives in its own element at the end of `<body>`.
+`<Buoy />` renders nothing inside your component tree. The island lives in its own element at the end of `<body>`.
 
-**Next.js (App Router):** put `<Atoll />` in your root `layout.tsx`. The package is marked `'use client'`, so you can import it from a Server Component file. Calling `atoll()` during server rendering is harmless: nothing shows until the island mounts in the browser.
+**Next.js (App Router):** put `<Buoy />` in your root `layout.tsx`. The package is marked `'use client'`, so you can import it from a Server Component file. Calling `buoy()` during server rendering is harmless: nothing shows until the island mounts in the browser.
 
 ## Messages
 
 ```ts
-atoll('Link copied', { icon: 'link' });
-atoll.success('Saved to drafts');
-atoll.info('Update available');
-atoll.warn("You're offline", { persist: true });
-atoll.error("Couldn't save", { action: { label: 'Retry', onClick: save } });
+buoy('Link copied', { icon: 'link' });
+buoy.success('Saved to drafts');
+buoy.info('Update available');
+buoy.warn("You're offline", { persist: true });
+buoy.error("Couldn't save", { action: { label: 'Retry', onClick: save } });
 ```
 
 One message shows at a time. While others wait, a `+N` badge counts them and each one gets a short turn. Errors and `persist: true` messages stay until they are dismissed, but they step aside for newer messages and come back afterwards.
@@ -55,7 +55,7 @@ One message shows at a time. While others wait, a `+N` badge counts them and eac
 Messages with a description or several buttons open on hover or tap. Pass `expanded: true` to open them straight away:
 
 ```ts
-atoll('Export ready', {
+buoy('Export ready', {
   description: 'Q3-report.pdf · 4.2 MB',
   icon: 'file',
   tone: 'accent',
@@ -70,10 +70,10 @@ atoll('Export ready', {
 Every call returns an id. Pass it back to update the message in place, or to dismiss it:
 
 ```ts
-const id = atoll('Syncing…', { duration: Infinity });
-atoll.success('Synced', { id });
-atoll.dismiss(id);
-atoll.dismiss(); // everything
+const id = buoy('Syncing…', { duration: Infinity });
+buoy.success('Synced', { id });
+buoy.dismiss(id);
+buoy.dismiss(); // everything
 ```
 
 | Option | Type | What it does |
@@ -94,7 +94,7 @@ Built-in icons: `link`, `check`, `error`, `warning`, `info`, `upload`, `download
 ## Promises
 
 ```ts
-atoll.promise(save(), {
+buoy.promise(save(), {
   loading: 'Saving…',
   success: 'Saved to drafts',
   error: (e) => (e instanceof Error ? e.message : "Couldn't save"),
@@ -106,10 +106,10 @@ It returns the promise you passed, so you can still `await` it.
 
 ## Background tasks
 
-Give `atoll.track()` a function that does the work and reports progress. The island shows a live ring. Tapping it opens the tray, where each task can pause, resume, retry or cancel.
+Give `buoy.track()` a function that does the work and reports progress. The island shows a live ring. Tapping it opens the tray, where each task can pause, resume, retry or cancel.
 
 ```ts
-const job = atoll.track(
+const job = buoy.track(
   (task) =>
     upload(file, {
       onProgress: (e) => task.progress(e.loaded, e.total),
@@ -148,20 +148,20 @@ If the function throws or rejects, the task is marked failed with the error's me
 Show progress elsewhere in your React UI with the hook:
 
 ```tsx
-import { useAtollTasks } from 'atoll-ui';
+import { useBuoyTasks } from 'buoy-ui';
 
 function UploadBadge() {
-  const tasks = useAtollTasks();
+  const tasks = useBuoyTasks();
   const running = tasks.filter((t) => t.status === 'running').length;
   return running ? <span>{running} uploading</span> : null;
 }
 ```
 
-You can also open the tray yourself: `atoll.tray.open()`, `atoll.tray.close()`, `atoll.tray.toggle()`.
+You can also open the tray yourself: `buoy.tray.open()`, `buoy.tray.close()`, `buoy.tray.toggle()`.
 
 ## Options
 
-Pass these as props to `<Atoll />`, or to `mount()` and `atoll.configure()` without React.
+Pass these as props to `<Buoy />`, or to `mount()` and `buoy.configure()` without React.
 
 | Prop | Type | Default | What it does |
 | --- | --- | --- | --- |
@@ -178,12 +178,12 @@ Pass these as props to `<Atoll />`, or to `mount()` and `atoll.configure()` with
 | `offset` | `number` | `12` | Distance from the screen edge in px |
 | `taskIcon` | icon | `'upload'` | Icon on the live pill |
 | `labels` | `{ noun, active, doneOne, doneMany }` | | Wording for tasks |
-| `injectStyles` | `boolean` | `true` | Set to `false` if you import `atoll-ui/styles.css` yourself |
+| `injectStyles` | `boolean` | `true` | Set to `false` if you import `buoy-ui/styles.css` yourself |
 | `nonce` | `string` | | Nonce for the injected `<style>` under a strict CSP |
 | `container` | `HTMLElement` | `document.body` | Where to render |
 
 ```tsx
-<Atoll
+<Buoy
   theme="frost"
   resting="pill"
   labels={{
@@ -199,22 +199,22 @@ Set these custom properties anywhere above the island, `:root` included:
 
 ```css
 :root {
-  --atoll-accent: #2dd4bf;        /* progress on dark surfaces */
-  --atoll-accent-strong: #0f766e; /* progress on light surfaces */
-  --atoll-ink: #0b0b0c;           /* Ink and Notch fill */
-  --atoll-font: 'Inter', system-ui, sans-serif;
-  --atoll-offset: 12px;
-  --atoll-z: 2147483000;
+  --buoy-accent: #2dd4bf;        /* progress on dark surfaces */
+  --buoy-accent-strong: #0f766e; /* progress on light surfaces */
+  --buoy-ink: #0b0b0c;           /* Ink and Notch fill */
+  --buoy-font: 'Inter', system-ui, sans-serif;
+  --buoy-offset: 12px;
+  --buoy-z: 2147483000;
 }
 ```
 
 ## Without React
 
 ```ts
-import { atoll, mount } from 'atoll-ui/vanilla';
+import { buoy, mount } from 'buoy-ui/vanilla';
 
 const island = mount({ theme: 'ink' });
-atoll('Hello');
+buoy('Hello');
 island.configure({ position: 'bottom' });
 island.destroy();
 ```
@@ -222,11 +222,11 @@ island.destroy();
 Or from a CDN:
 
 ```html
-<script src="https://unpkg.com/atoll-ui/dist/atoll.global.js"></script>
+<script src="https://unpkg.com/buoy-ui/dist/buoy.global.js"></script>
 <script>
-  const { atoll, mount } = window.Atoll;
+  const { buoy, mount } = window.Buoy;
   mount();
-  atoll('Hello');
+  buoy('Hello');
 </script>
 ```
 

@@ -19,18 +19,18 @@ const TYPE_TONE: Record<string, string> = { success: 'success', error: 'error', 
 const USER_TONE: Record<string, string> = { accent: 'accent', success: 'success', error: 'error', warning: 'warn', info: 'info' };
 
 const MARKUP =
-  '<div class="atoll-sr" role="status" aria-live="polite" aria-atomic="true"></div>' +
-  '<div class="atoll-stage" hidden><div class="atoll-drag">' +
-  '<div class="atoll-shadow"></div><div class="atoll-bshadow"></div>' +
-  '<div class="atoll-goo"><div class="atoll-fill"></div><div class="atoll-bfill"></div></div>' +
-  '<div class="atoll-shell"></div>' +
-  '<button class="atoll-bubble" type="button" data-act="bubble" tabindex="-1" aria-hidden="true"></button>' +
+  '<div class="buoy-sr" role="status" aria-live="polite" aria-atomic="true"></div>' +
+  '<div class="buoy-stage" hidden><div class="buoy-drag">' +
+  '<div class="buoy-shadow"></div><div class="buoy-bshadow"></div>' +
+  '<div class="buoy-goo"><div class="buoy-fill"></div><div class="buoy-bfill"></div></div>' +
+  '<div class="buoy-shell"></div>' +
+  '<button class="buoy-bubble" type="button" data-act="bubble" tabindex="-1" aria-hidden="true"></button>' +
   '</div></div>';
 
 // Blur plus an alpha threshold: shapes that come close melt into each other while the bubble splits off.
 const GOO =
-  '<svg data-atoll-goo aria-hidden="true" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden"><defs>' +
-  '<filter id="atoll-goo" filterUnits="userSpaceOnUse" x="-700" y="-700" width="1400" height="1400" color-interpolation-filters="sRGB">' +
+  '<svg data-buoy-goo aria-hidden="true" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden"><defs>' +
+  '<filter id="buoy-goo" filterUnits="userSpaceOnUse" x="-700" y="-700" width="1400" height="1400" color-interpolation-filters="sRGB">' +
   '<feGaussianBlur in="SourceGraphic" stdDeviation="7" result="b"/>' +
   '<feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -9" result="g"/>' +
   '<feComposite in="SourceGraphic" in2="g" operator="atop"/>' +
@@ -79,17 +79,17 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
   /* ───── DOM ───── */
 
   const root = doc.createElement('div');
-  root.className = 'atoll';
+  root.className = 'buoy';
   root.innerHTML = MARKUP;
   const pick = <T extends Element = HTMLElement>(selector: string) => root.querySelector(selector) as T;
-  const sr = pick('.atoll-sr');
-  const stage = pick('.atoll-stage');
-  const dragEl = pick('.atoll-drag');
-  const goo = pick('.atoll-goo');
-  const shell = pick('.atoll-shell');
-  const bubble = pick<HTMLButtonElement>('.atoll-bubble');
-  const shellParts = [pick('.atoll-shadow'), pick('.atoll-fill'), shell];
-  const bubbleParts = [pick('.atoll-bshadow'), pick('.atoll-bfill'), bubble];
+  const sr = pick('.buoy-sr');
+  const stage = pick('.buoy-stage');
+  const dragEl = pick('.buoy-drag');
+  const goo = pick('.buoy-goo');
+  const shell = pick('.buoy-shell');
+  const bubble = pick<HTMLButtonElement>('.buoy-bubble');
+  const shellParts = [pick('.buoy-shadow'), pick('.buoy-fill'), shell];
+  const bubbleParts = [pick('.buoy-bshadow'), pick('.buoy-bfill'), bubble];
   const holder = doc.createElement('div');
   holder.innerHTML = GOO;
   const gooSvg = holder.firstElementChild as Element;
@@ -187,7 +187,7 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
   /* ───── Views: what the one surface should look like right now ───── */
 
   const ib = (t: Task, act: string, fk: string, label: string, icon: string, reveal = false) =>
-    `<button type="button" class="atoll-ib${reveal ? ' atoll-reveal' : ''}" data-act="${act}" data-id="${t.id}" data-fk="${fk}:${t.id}" aria-label="${label} ${esc(t.label)}"><span>${iconHTML(icon)}</span></button>`;
+    `<button type="button" class="buoy-ib${reveal ? ' buoy-reveal' : ''}" data-act="${act}" data-id="${t.id}" data-fk="${fk}:${t.id}" aria-label="${label} ${esc(t.label)}"><span>${iconHTML(icon)}</span></button>`;
   const hasDetails = (m: Msg) => !!(m.description || (m.actions && m.actions.length));
   let hoverExpand = false;
 
@@ -198,19 +198,19 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
     let html: string;
     if (expanded) {
       const actions = (m.actions || [])
-        .map((a, i) => `<button type="button" class="atoll-btn${a.primary ? ' is-primary' : ''}" data-act="action" data-i="${i}" data-fk="a${i}">${esc(a.label)}</button>`)
+        .map((a, i) => `<button type="button" class="buoy-btn${a.primary ? ' is-primary' : ''}" data-act="action" data-i="${i}" data-fk="a${i}">${esc(a.label)}</button>`)
         .join('');
       html =
-        `<div class="atoll-exp"><div class="atoll-exp-head"><span class="atoll-tile" data-tone="${tone}">${icon || iconHTML('info')}</span>` +
-        `<div class="atoll-exp-text"><span class="atoll-exp-title">${esc(m.title)}</span>${m.description ? `<span class="atoll-exp-desc">${esc(m.description)}</span>` : ''}</div>` +
-        `<button type="button" class="atoll-x" data-act="dismiss" data-fk="x" aria-label="Dismiss">${iconHTML('x')}</button></div>` +
-        `${actions ? `<div class="atoll-actions">${actions}</div>` : ''}</div>`;
+        `<div class="buoy-exp"><div class="buoy-exp-head"><span class="buoy-tile" data-tone="${tone}">${icon || iconHTML('info')}</span>` +
+        `<div class="buoy-exp-text"><span class="buoy-exp-title">${esc(m.title)}</span>${m.description ? `<span class="buoy-exp-desc">${esc(m.description)}</span>` : ''}</div>` +
+        `<button type="button" class="buoy-x" data-act="dismiss" data-fk="x" aria-label="Dismiss">${iconHTML('x')}</button></div>` +
+        `${actions ? `<div class="buoy-actions">${actions}</div>` : ''}</div>`;
     } else {
       const waiting = state.queue.length;
-      const action = m.action ? `<button type="button" class="atoll-act" data-act="action" data-i="-1" data-fk="a-1"><span>${esc(m.action.label)}</span></button>` : '';
-      const badge = !action && waiting ? `<span class="atoll-badge" title="${waiting} waiting">+${waiting}</span>` : '';
-      const cls = `atoll-row${icon ? '' : ' no-icon'}${action ? ' end-action' : badge ? ' end-badge' : ''}`;
-      html = `<div class="${cls}">${icon ? `<span class="atoll-ic" data-tone="${tone}">${icon}</span>` : ''}<span class="atoll-title">${esc(m.title)}</span>${badge}${action}</div>`;
+      const action = m.action ? `<button type="button" class="buoy-act" data-act="action" data-i="-1" data-fk="a-1"><span>${esc(m.action.label)}</span></button>` : '';
+      const badge = !action && waiting ? `<span class="buoy-badge" title="${waiting} waiting">+${waiting}</span>` : '';
+      const cls = `buoy-row${icon ? '' : ' no-icon'}${action ? ' end-action' : badge ? ' end-badge' : ''}`;
+      html = `<div class="${cls}">${icon ? `<span class="buoy-ic" data-tone="${tone}">${icon}</span>` : ''}<span class="buoy-title">${esc(m.title)}</span>${badge}${action}</div>`;
     }
     return {
       kind: 'msg',
@@ -230,13 +230,13 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
     const name = cfg.labels.active(running.map(store.info));
     const label = paused ? `Paused · ${name}` : name;
     const html =
-      `<button type="button" class="atoll-row end-ring atoll-live" data-act="open-tray" data-fk="live" aria-label="${esc(label)}. Show details">` +
-      `<span class="atoll-ic" data-tone="${paused ? '' : 'accent'}">${iconHTML(paused ? 'pause' : cfg.taskIcon)}</span>` +
-      `<span class="atoll-title">${esc(label)}</span><span class="atoll-pct">${Math.round(f * 100)}%</span>${ringHTML(f, paused)}</button>`;
+      `<button type="button" class="buoy-row end-ring buoy-live" data-act="open-tray" data-fk="live" aria-label="${esc(label)}. Show details">` +
+      `<span class="buoy-ic" data-tone="${paused ? '' : 'accent'}">${iconHTML(paused ? 'pause' : cfg.taskIcon)}</span>` +
+      `<span class="buoy-title">${esc(label)}</span><span class="buoy-pct">${Math.round(f * 100)}%</span>${ringHTML(f, paused)}</button>`;
     const patch = (el: HTMLElement) => {
-      const pct = el.querySelector('.atoll-pct');
+      const pct = el.querySelector('.buoy-pct');
       if (pct) pct.textContent = `${Math.round(f * 100)}%`;
-      setRing(el.querySelector('.atoll-ring'), f);
+      setRing(el.querySelector('.buoy-ring'), f);
     };
     return { kind: 'live', key: 'live', sig: `live|${label}|${paused}`, html, type: '', expanded: false, radius: null, spring: SPR.resize, patch };
   }
@@ -245,24 +245,24 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
     const n = bad.length;
     const label = `${n} ${cfg.labels.noun}${n === 1 ? '' : 's'} failed`;
     const html =
-      `<div class="atoll-row end-action"><span class="atoll-ic" data-tone="error">${iconHTML('error')}</span>` +
-      `<button type="button" class="atoll-link atoll-title" data-act="open-tray" data-fk="att">${esc(label)}</button>` +
-      `<button type="button" class="atoll-act" data-act="retry-failed" data-fk="att-retry"><span>Retry</span></button></div>`;
+      `<div class="buoy-row end-action"><span class="buoy-ic" data-tone="error">${iconHTML('error')}</span>` +
+      `<button type="button" class="buoy-link buoy-title" data-act="open-tray" data-fk="att">${esc(label)}</button>` +
+      `<button type="button" class="buoy-act" data-act="retry-failed" data-fk="att-retry"><span>Retry</span></button></div>`;
     return { kind: 'attention', key: 'attention', sig: html, html, type: 'error', expanded: false, radius: null, spring: SPR.resize };
   }
 
   function restView(): View {
     const html = state.tasks.length
-      ? '<button type="button" class="atoll-rest" data-act="open-tray" data-fk="rest" aria-label="Show activity"></button>'
-      : '<div class="atoll-rest"></div>';
+      ? '<button type="button" class="buoy-rest" data-act="open-tray" data-fk="rest" aria-label="Show activity"></button>'
+      : '<div class="buoy-rest"></div>';
     return { kind: 'rest', key: 'rest', sig: html, html, type: '', expanded: false, radius: 15, spring: SPR.resize };
   }
 
   function rowHTML(t: Task): string {
     const st = t.status;
     const tone = st === 'failed' ? 'error' : st === 'done' ? 'success' : '';
-    const tile = `<span class="atoll-tile sm" data-tone="${tone}">${iconHTML(st === 'done' ? 'check' : t.icon) || iconHTML('file')}</span>`;
-    const bar = st === 'done' || st === 'queued' ? '' : `<div class="atoll-bar"><i style="width:${(frac(t) * 100).toFixed(1)}%"></i></div>`;
+    const tile = `<span class="buoy-tile sm" data-tone="${tone}">${iconHTML(st === 'done' ? 'check' : t.icon) || iconHTML('file')}</span>`;
+    const bar = st === 'done' || st === 'queued' ? '' : `<div class="buoy-bar"><i style="width:${(frac(t) * 100).toFixed(1)}%"></i></div>`;
     let buttons = '';
     if (st === 'running') buttons = ib(t, 'cancel', 'c', 'Cancel', 'x', true) + (t.pausable ? ib(t, 'pause', 'p', 'Pause', 'pause') : '');
     else if (st === 'queued') buttons = ib(t, 'cancel', 'c', 'Cancel', 'x');
@@ -270,9 +270,9 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
     else if (st === 'failed') buttons = ib(t, 'remove', 'c', 'Remove', 'x', true) + ib(t, 'retry', 'p', 'Retry', 'retry');
     else if (st === 'done' && t.onOpen) buttons = ib(t, 'open', 'p', 'Open', 'open');
     return (
-      `<li class="atoll-task" data-id="${t.id}" data-status="${st}">${tile}<div class="atoll-task-main">` +
-      `<div class="atoll-task-top"><span class="atoll-task-name">${esc(t.label)}</span><span class="atoll-task-state${st === 'failed' ? ' is-error' : ''}">${esc(stateText(t))}</span></div>` +
-      `${bar}<span class="atoll-task-meta">${esc(metaText(t))}</span></div><div class="atoll-task-actions">${buttons}</div></li>`
+      `<li class="buoy-task" data-id="${t.id}" data-status="${st}">${tile}<div class="buoy-task-main">` +
+      `<div class="buoy-task-top"><span class="buoy-task-name">${esc(t.label)}</span><span class="buoy-task-state${st === 'failed' ? ' is-error' : ''}">${esc(stateText(t))}</span></div>` +
+      `${bar}<span class="buoy-task-meta">${esc(metaText(t))}</span></div><div class="buoy-task-actions">${buttons}</div></li>`
     );
   }
 
@@ -281,34 +281,34 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
     const running = counts.running + counts.queued + counts.paused;
     const bottom = cfg.position === 'bottom';
     const noun = (n: number) => `${cfg.labels.noun}${n === 1 ? '' : 's'}`;
-    const clear = counts.done ? '<button type="button" class="atoll-act" data-act="clear-done" data-fk="clear"><span>Clear done</span></button>' : '';
+    const clear = counts.done ? '<button type="button" class="buoy-act" data-act="clear-done" data-fk="clear"><span>Clear done</span></button>' : '';
     const head =
-      `<div class="atoll-tray-head"><div class="atoll-tray-titles"><span class="atoll-tray-title">Activity</span><span class="atoll-tray-sub">${esc(text || 'Nothing here yet')}</span></div>` +
-      `<div class="atoll-tray-tools">${clear}<button type="button" class="atoll-ib" data-act="close-tray" data-fk="close" aria-label="Close"><span>${iconHTML(bottom ? 'down' : 'up')}</span></button></div></div>`;
-    const list = state.tasks.length ? `<ul class="atoll-list">${state.tasks.map(rowHTML).join('')}</ul>` : '<p class="atoll-empty">Tasks you start show up here.</p>';
+      `<div class="buoy-tray-head"><div class="buoy-tray-titles"><span class="buoy-tray-title">Activity</span><span class="buoy-tray-sub">${esc(text || 'Nothing here yet')}</span></div>` +
+      `<div class="buoy-tray-tools">${clear}<button type="button" class="buoy-ib" data-act="close-tray" data-fk="close" aria-label="Close"><span>${iconHTML(bottom ? 'down' : 'up')}</span></button></div></div>`;
+    const list = state.tasks.length ? `<ul class="buoy-list">${state.tasks.map(rowHTML).join('')}</ul>` : '<p class="buoy-empty">Tasks you start show up here.</p>';
     let foot = '';
     if (cfg.guard && running) {
       const all = counts.running
-        ? '<button type="button" class="atoll-act" data-act="pause-all" data-fk="all"><span>Pause all</span></button>'
+        ? '<button type="button" class="buoy-act" data-act="pause-all" data-fk="all"><span>Pause all</span></button>'
         : counts.paused
-          ? '<button type="button" class="atoll-act" data-act="resume-all" data-fk="all"><span>Resume all</span></button>'
+          ? '<button type="button" class="buoy-act" data-act="resume-all" data-fk="all"><span>Resume all</span></button>'
           : '';
-      foot = `<div class="atoll-tray-foot">${iconHTML('info')}<span>Closing this tab stops ${running} ${noun(running)}.</span>${all}</div>`;
+      foot = `<div class="buoy-tray-foot">${iconHTML('info')}<span>Closing this tab stops ${running} ${noun(running)}.</span>${all}</div>`;
     }
-    const html = `<div class="atoll-tray" role="dialog" aria-label="Activity">${head}${list}${foot}</div>`;
+    const html = `<div class="buoy-tray" role="dialog" aria-label="Activity">${head}${list}${foot}</div>`;
     const sig = ['tray', bottom, cfg.guard, running, counts.running > 0, counts.paused > 0, counts.done > 0, state.tasks.map((t) => t.id + t.status).join(',')].join('|');
     const patch = (el: HTMLElement) => {
       for (const t of state.tasks) {
-        const row = el.querySelector(`.atoll-task[data-id="${t.id}"]`);
+        const row = el.querySelector(`.buoy-task[data-id="${t.id}"]`);
         if (!row) continue;
-        const label = row.querySelector('.atoll-task-state');
+        const label = row.querySelector('.buoy-task-state');
         if (label) label.textContent = stateText(t);
-        const fill = row.querySelector<HTMLElement>('.atoll-bar > i');
+        const fill = row.querySelector<HTMLElement>('.buoy-bar > i');
         if (fill) fill.style.width = `${(frac(t) * 100).toFixed(1)}%`;
-        const meta = row.querySelector('.atoll-task-meta');
+        const meta = row.querySelector('.buoy-task-meta');
         if (meta) meta.textContent = metaText(t);
       }
-      const sub = el.querySelector('.atoll-tray-sub');
+      const sub = el.querySelector('.buoy-tray-sub');
       if (sub) sub.textContent = text || 'Nothing here yet';
     };
     return { kind: 'tray', key: 'tray', sig, html, type: '', expanded: false, radius: 30, spring: SPR.tray, patch };
@@ -377,7 +377,7 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
   function swap(next: View) {
     const old = layer;
     const el = doc.createElement('div');
-    el.className = 'atoll-layer';
+    el.className = 'buoy-layer';
     el.innerHTML = next.html;
     shell.appendChild(el);
     layer = el;
@@ -404,10 +404,10 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
     if (!layer) return;
     const active = doc.activeElement;
     const focusKey = active && layer.contains(active) ? active.getAttribute('data-fk') : null;
-    const list = layer.querySelector('.atoll-list');
+    const list = layer.querySelector('.buoy-list');
     const scroll = list ? list.scrollTop : 0;
     layer.innerHTML = next.html;
-    const newList = layer.querySelector('.atoll-list');
+    const newList = layer.querySelector('.buoy-list');
     if (newList && scroll) newList.scrollTop = scroll;
     if (focusKey) {
       const target = Array.from(layer.querySelectorAll<HTMLElement>('[data-fk]')).find((n) => n.getAttribute('data-fk') === focusKey);
@@ -492,11 +492,11 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
           bubble.innerHTML = ringHTML(f, paused);
           bubbleMode = mode;
         } else {
-          setRing(bubble.querySelector('.atoll-ring'), f);
+          setRing(bubble.querySelector('.buoy-ring'), f);
         }
         bubble.setAttribute('aria-label', `${cfg.labels.active(running.map(store.info))}. Show details`);
       } else if (bubbleMode !== 'attention') {
-        bubble.innerHTML = `<span class="atoll-bub-ic">${iconHTML('error')}</span>`;
+        bubble.innerHTML = `<span class="buoy-bub-ic">${iconHTML('error')}</span>`;
         bubbleMode = 'attention';
         bubble.setAttribute('aria-label', `A ${cfg.labels.noun} needs attention. Show details`);
       }
@@ -519,12 +519,12 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
 
   let lastPosition = cfg.position;
   function applyConfig() {
-    root.dataset.atollTheme = cfg.theme;
+    root.dataset.buoyTheme = cfg.theme;
     root.dataset.position = cfg.position;
     root.dataset.rich = cfg.richColors ? 'true' : 'false';
     root.dataset.scheme = cfg.colorScheme;
-    if (cfg.offset != null) root.style.setProperty('--atoll-offset', `${cfg.offset}px`);
-    else root.style.removeProperty('--atoll-offset');
+    if (cfg.offset != null) root.style.setProperty('--buoy-offset', `${cfg.offset}px`);
+    else root.style.removeProperty('--buoy-offset');
     layout();
     if (lastPosition !== cfg.position && visible && !reduced()) play(stage, [{ opacity: 0 }, { opacity: 1 }], { duration: 220 });
     lastPosition = cfg.position;
@@ -691,7 +691,7 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
 
   let drag: { id: number; y: number; t: number; dy: number; active: boolean } | null = null;
   on(shell, 'pointerdown', (e) => {
-    if (e.button !== 0 || (e.target as Element).closest('.atoll-list')) return;
+    if (e.button !== 0 || (e.target as Element).closest('.buoy-list')) return;
     drag = { id: e.pointerId, y: e.clientY, t: clock(), dy: 0, active: false };
   });
   on(win, 'pointermove', (e) => {

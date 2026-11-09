@@ -36,13 +36,13 @@ export function iconHTML(icon: string | null | undefined): string {
   return /^\s*<svg[\s>]/i.test(icon) ? icon : '';
 }
 
-export const spinnerHTML = '<svg class="atoll-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" opacity=".22"/><path d="M12 3.5a8.5 8.5 0 0 1 8.5 8.5"/></svg>';
+export const spinnerHTML = '<svg class="buoy-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" opacity=".22"/><path d="M12 3.5a8.5 8.5 0 0 1 8.5 8.5"/></svg>';
 
 const RING = 2 * Math.PI * 10.5;
 const offset = (f: number) => (RING * (1 - Math.min(1, Math.max(0, f)))).toFixed(2);
 
 export function ringHTML(fraction: number, muted: boolean): string {
-  return `<svg class="atoll-ring${muted ? ' is-muted' : ''}" viewBox="0 0 28 28" aria-hidden="true" focusable="false"><circle class="trk" cx="14" cy="14" r="10.5"/><circle class="val" cx="14" cy="14" r="10.5" style="stroke-dasharray:${RING.toFixed(2)};stroke-dashoffset:${offset(fraction)};opacity:${fraction > 0.004 ? 1 : 0}"/></svg>`;
+  return `<svg class="buoy-ring${muted ? ' is-muted' : ''}" viewBox="0 0 28 28" aria-hidden="true" focusable="false"><circle class="trk" cx="14" cy="14" r="10.5"/><circle class="val" cx="14" cy="14" r="10.5" style="stroke-dasharray:${RING.toFixed(2)};stroke-dashoffset:${offset(fraction)};opacity:${fraction > 0.004 ? 1 : 0}"/></svg>`;
 }
 
 export function setRing(svg: Element | null, fraction: number): void {

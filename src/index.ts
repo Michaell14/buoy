@@ -1,12 +1,12 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { mount } from './core/mount';
 import { shared } from './core/shared';
-import type { AtollOptions, Labels, MountHandle, MountOptions, TaskInfo } from './core/types';
+import type { BuoyOptions, Labels, MountHandle, MountOptions, TaskInfo } from './core/types';
 
-export { atoll } from './core/api';
+export { buoy } from './core/api';
 export type {
-  Atoll as AtollApi,
-  AtollOptions,
+  Buoy as BuoyApi,
+  BuoyOptions,
   ColorScheme,
   IconInput,
   IconName,
@@ -26,13 +26,13 @@ export type {
   TrackOptions,
 } from './core/types';
 
-export type AtollProps = Omit<MountOptions, keyof AtollOptions> & AtollOptions;
+export type BuoyProps = Omit<MountOptions, keyof BuoyOptions> & BuoyOptions;
 
 /**
- * Renders the island. Put it once near the root of your app, then call `atoll()` from anywhere.
+ * Renders the island. Put it once near the root of your app, then call `buoy()` from anywhere.
  * It renders nothing in React's tree: the island lives in its own element at the end of <body>.
  */
-export function Atoll(props: AtollProps): null {
+export function Buoy(props: BuoyProps): null {
   const { container, injectStyles, nonce, labels, ...options } = props;
   const handle = useRef<MountHandle | null>(null);
   // Label functions are read through refs, so inline arrow functions don't reconfigure on every render.
@@ -88,7 +88,7 @@ export function Atoll(props: AtollProps): null {
 const NO_TASKS: TaskInfo[] = [];
 
 /** The current tasks, kept in sync. Use it to show progress somewhere else in your UI. */
-export function useAtollTasks(): TaskInfo[] {
+export function useBuoyTasks(): TaskInfo[] {
   const { store } = shared();
   const cache = useRef<{ version: number; tasks: TaskInfo[] }>({ version: -1, tasks: NO_TASKS });
   return useSyncExternalStore(
