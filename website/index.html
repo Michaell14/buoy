@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Atoll · An island for your notifications</title>
+<meta name="description" content="A morphing island for notifications, promises and background work. For React, or no framework at all.">
+<meta property="og:title" content="Atoll">
+<meta property="og:description" content="An island for your notifications, promises and background work.">
+<meta name="theme-color" content="#FFFFFF">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="styles.css">
+<script defer src="main.js"></script>
+</head>
+<body>
+<!-- page -->
+<div class="page" id="top">
+
+<header class="head">
+<a class="brand" href="#top">
+<svg class="brand-mark" aria-hidden="true" width="26" height="26" viewBox="0 0 32 32"><circle class="ring" cx="16" cy="16" r="11" transform="rotate(-60 16 16)"/><rect class="pill" x="9" y="12.5" width="14" height="7" rx="3.5"/></svg>
+<span>Atoll</span>
+</a>
+<div class="head-gap" aria-hidden="true"></div>
+<nav class="nav" aria-label="Main">
+<a href="#usage">Docs</a>
+<a href="https://github.com/Michaell14/atoll">GitHub<svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24"><path d="M7 17L17 7"/><path d="M9 7h8v8"/></svg></a>
+</nav>
+</header>
+
+<main>
+<section class="hero" aria-labelledby="title">
+<p class="eyebrow">atoll-ui · v{{version}} · MIT</p>
+<div class="wordmark"><h1 id="title">Atoll</h1></div>
+<p class="tagline">An island for your notifications, promises <span>and background work.</span></p>
+<div class="ctas">
+<button type="button" class="btn btn-ink" id="install" aria-label="Copy the install command, npm i atoll-ui"><code id="install-text">npm i atoll-ui</code><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 8.5v-2a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/></svg></button>
+<a class="btn btn-line" href="https://github.com/Michaell14/atoll">Star on GitHub</a>
+</div>
+</section>
+
+<div class="column">
+
+<section class="try" aria-labelledby="try-h">
+<h2 id="try-h" class="label">Try it</h2>
+<div class="chips">
+<button type="button" class="chip" data-demo="message">Message</button>
+<button type="button" class="chip" data-demo="promise">Promise</button>
+<button type="button" class="chip" data-demo="expanded">Expanded</button>
+<button type="button" class="chip" data-demo="error">Error</button>
+<button type="button" class="chip" data-demo="upload">Upload</button>
+<button type="button" class="chip" data-demo="two">Two at once</button>
+</div>
+<pre class="call" tabindex="0"><code id="call">atoll('Link copied', { icon: 'link' });</code></pre>
+<p class="note">The island at the top of this page is the real component. Press a button and watch it change.</p>
+</section>
+
+<section class="block" aria-labelledby="states-h">
+<div class="block-head">
+<h2 id="states-h">One shape, every state</h2>
+<p>Nothing stacks and nothing jumps. The same element changes its size, icon and label.</p>
+</div>
+<div class="tiles">
+<figure class="tile">
+<div class="tile-stage">
+<div class="mini"><span class="mini-ico"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.1 1.1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.1-1.1"/></svg></span>Link copied</div>
+</div>
+<figcaption>message</figcaption>
+</figure>
+<figure class="tile">
+<div class="tile-stage">
+<div class="mini"><span class="mini-ico is-success"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5.5 12.5l4 4L18.5 7.5"/></svg></span>Saved to drafts</div>
+</div>
+<figcaption>promise</figcaption>
+</figure>
+<figure class="tile">
+<div class="tile-stage">
+<div class="mini mini-task"><span class="mini-ico is-accent"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 15V4.5"/><path d="M7.5 9L12 4.5L16.5 9"/><path d="M4.5 15v2.5a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V15"/></svg></span>3 uploads<svg class="ring" aria-hidden="true" viewBox="0 0 28 28"><circle class="track" cx="14" cy="14" r="10.5"/><circle class="val" cx="14" cy="14" r="10.5" transform="rotate(-90 14 14)"/></svg></div>
+</div>
+<figcaption>task</figcaption>
+</figure>
+<figure class="tile">
+<div class="tile-stage">
+<div class="mini"><span class="mini-ico"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20.5 3.5L10 14"/><path d="M20.5 3.5l-6.5 17-4-6.5-6.5-4z"/></svg></span>Sent</div>
+<div class="mini-bubble"><svg class="ring" aria-hidden="true" viewBox="0 0 28 28"><circle class="track" cx="14" cy="14" r="10.5"/><circle class="val" cx="14" cy="14" r="10.5" transform="rotate(-90 14 14)"/></svg></div>
+</div>
+<figcaption>two at once</figcaption>
+</figure>
+</div>
+</section>
+
+<section class="block" id="usage" aria-labelledby="usage-h">
+<div class="block-head">
+<h2 id="usage-h">Two lines to start</h2>
+<p>Render the island once. Call it from anywhere, even outside React.</p>
+</div>
+<div class="code">
+<div class="code-bar">
+<div class="tabs" role="tablist" aria-label="Setup">
+<button type="button" role="tab" id="tab-react" aria-selected="true" aria-controls="usage-panel" data-tab="react">React</button>
+<button type="button" role="tab" id="tab-vanilla" aria-selected="false" aria-controls="usage-panel" data-tab="vanilla" tabindex="-1">Vanilla</button>
+<button type="button" role="tab" id="tab-script" aria-selected="false" aria-controls="usage-panel" data-tab="script" tabindex="-1">Script tag</button>
+</div>
+<button type="button" class="code-copy" id="usage-copy">Copy</button>
+</div>
+<pre class="code-body" id="usage-panel" role="tabpanel" aria-labelledby="tab-react" tabindex="0"><code id="usage-code">import { Atoll, atoll } from 'atoll-ui';
+
+export default function App() {
+  return &lt;Atoll /&gt;;
+}
+
+atoll('Link copied', { icon: 'link' });</code></pre>
+</div>
+<p class="more">Messages, promises, tasks and every option are covered in the <a href="https://github.com/Michaell14/atoll#readme">README</a>.</p>
+</section>
+
+<section class="block" aria-labelledby="themes-h">
+<div class="block-head">
+<h2 id="themes-h">Four themes</h2>
+<p>One prop changes the surface. Pick one to see it on the island.</p>
+</div>
+<div class="themes">
+<button type="button" class="theme" data-theme-name="ink" aria-pressed="true">
+<span class="theme-stage"><span class="theme-pill is-ink"></span></span>
+<span class="theme-name">Ink <span class="theme-note">default</span></span>
+</button>
+<button type="button" class="theme" data-theme-name="frost" aria-pressed="false">
+<span class="theme-stage"><span class="frost-bg" aria-hidden="true"><i></i><i></i><i></i></span><span class="theme-pill is-frost"></span></span>
+<span class="theme-name">Frost</span>
+</button>
+<button type="button" class="theme" data-theme-name="paper" aria-pressed="false">
+<span class="theme-stage"><span class="theme-pill is-paper"></span></span>
+<span class="theme-name">Paper</span>
+</button>
+<button type="button" class="theme" data-theme-name="notch" aria-pressed="false">
+<span class="theme-stage is-notch"><span class="notch"></span></span>
+<span class="theme-name">Notch</span>
+</button>
+</div>
+<pre class="call" tabindex="0"><code id="theme-call">&lt;Atoll theme="ink" /&gt;</code></pre>
+</section>
+
+<section class="details" aria-label="Details">
+<div><h3>Queues, never stacks</h3><p>One message at a time. A small badge counts what is waiting.</p></div>
+<div><h3>Work steps aside</h3><p>Uploads shrink into a bubble so new messages still get through.</p></div>
+<div><h3>Calm by default</h3><p>Real buttons, a live region, and only fades when motion is reduced.</p></div>
+</section>
+
+</div>
+</main>
+
+<footer class="foot">
+<span class="foot-version">atoll-ui · v{{version}}</span>
+<span>MIT · <a href="https://github.com/Michaell14/atoll">GitHub</a></span>
+</footer>
+
+</div>
+<!-- /page -->
+</body>
+</html>

@@ -56,7 +56,9 @@
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm test && npm run build",
     "prepublishOnly": "npm run check",
-    "lint:package": "publint && attw --pack . --exclude-entrypoints styles.css"
+    "lint:package": "publint && attw --pack . --exclude-entrypoints styles.css",
+    "site": "node website/build.mjs --serve",
+    "site:build": "tsc -p website && node website/build.mjs"
   },
   "peerDependencies": {
     "react": ">=18"
@@ -81,6 +83,7 @@
     "@arethetypeswrong/cli": "^0.18.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "esbuild": "^0.28.2",
     "jsdom": "^31.0.0",
     "publint": "^0.3.25",
     "react": "^19.3.1",

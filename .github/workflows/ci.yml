@@ -41,6 +41,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Build the website
+        run: npm run site:build
+
       - name: Check the package (exports, types, metadata)
         if: matrix.node == 24
         run: npm run lint:package
