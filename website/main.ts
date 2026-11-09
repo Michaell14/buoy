@@ -4,7 +4,8 @@ import { buoy, mount } from '../src/vanilla';
 import type { TaskContext, Theme } from '../src/vanilla';
 
 mount({
-  resting: 'pill',
+  // The island tucks away when it has nothing to show, rather than sitting there as an empty pill.
+  resting: 'hidden',
   offset: 16,
   colorScheme: 'light',
   // The uploads here are pretend, so leaving the page never asks for confirmation.
@@ -52,6 +53,7 @@ function selectText(element: HTMLElement) {
   }
 }
 
+/** Copies text and says so on the island. */
 function copy(text: string, element: HTMLElement) {
   let done: Promise<void>;
   try {
@@ -60,13 +62,59 @@ function copy(text: string, element: HTMLElement) {
     done = Promise.reject(error);
   }
   done.then(
-    () => buoy('Copied to clipboard', { icon: 'copy' }),
+    () => note((id) => buoy.success('Copied to clipboard', { id, duration: 2000 }), 1800),
     () => {
       selectText(element);
-      buoy.warn("Couldn't copy here", { description: 'The text is selected, so you can copy it yourself.', expanded: true });
+      note((id) => buoy.warn("Couldn't copy here", { id, description: 'The text is selected, so you can copy it yourself.', expanded: true }), 2800);
     },
   );
 }
+
+/* ───── Welcome ───── */
+
+// The island greets visitors, then holds the install command until the first demo replaces it for good.
+const WELCOME = 'welcome';
+const INSTALL = 'npm i buoy-ui';
+const LOGO =
+  '<svg viewBox="0 0 32 32" aria-hidden="true" focusable="false"><circle cx="16" cy="16" r="11" fill="none" transform="rotate(-60 16 16)" style="stroke: var(--a-accent); stroke-width: 4.5; stroke-linecap: round; stroke-dasharray: 54 70"/><rect x="9" y="12.5" width="14" height="7" rx="3.5" fill="currentColor"/></svg>';
+const PROMPT =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5.5 7.5l4.5 4.5-4.5 4.5"/><path d="M12.5 17h6"/></svg>';
+
+let welcoming = true;
+let welcomeTimer = 0;
+
+function showInstall() {
+  if (!welcoming) return;
+  buoy(INSTALL, { id: WELCOME, icon: PROMPT, persist: true, action: { label: 'Copy', onClick: copyFromIsland } });
+}
+
+function copyFromIsland() {
+  copy(INSTALL, $('#install-text'));
+}
+
+/**
+ * Shows a short message. While the welcome is up, the message takes its place and hands it back
+ * after `ms`, so the install command never waits in the queue behind it.
+ */
+function note(show: (id?: string) => void, ms: number) {
+  if (!welcoming) {
+    show();
+    return;
+  }
+  clearTimeout(welcomeTimer);
+  show(WELCOME);
+  welcomeTimer = window.setTimeout(showInstall, ms);
+}
+
+function endWelcome() {
+  if (!welcoming) return;
+  welcoming = false;
+  clearTimeout(welcomeTimer);
+  buoy.dismiss(WELCOME);
+}
+
+buoy('Welcome to Buoy', { id: WELCOME, icon: LOGO, persist: true });
+welcomeTimer = window.setTimeout(showInstall, 2000);
 
 /* ───── Demos ───── */
 
@@ -156,13 +204,14 @@ function showCall(name: string) {
 chips.forEach((chip) =>
   chip.addEventListener('click', () => {
     const name = chip.dataset.demo!;
+    endWelcome();
     DEMOS[name].run();
     showCall(name);
   }),
 );
 showCall('message');
 
-$('#install').addEventListener('click', () => copy('npm i buoy-ui', $('#install-text')));
+$('#install').addEventListener('click', () => copy(INSTALL, $('#install-text')));
 
 /* ───── Setup tabs ───── */
 
@@ -227,7 +276,7 @@ themeButtons.forEach((button) =>
     buoy.configure({ theme });
     themeButtons.forEach((b) => b.setAttribute('aria-pressed', String(b === button)));
     setCode(themeCall, `<Buoy theme="${theme}" />`);
-    buoy(`Switched to ${NAMES[theme]}`, { icon: 'check' });
+    note((id) => buoy(`Switched to ${NAMES[theme]}`, { id, icon: 'check' }), 2000);
   }),
 );
 setCode(themeCall, '<Buoy theme="ink" />');
