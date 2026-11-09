@@ -85,7 +85,8 @@ export const css = [
   /* Compact row */
   '.buoy-row{display:flex;align-items:center;gap:10px;height:44px;padding:0 18px 0 6px;white-space:nowrap;font-size:14px;font-weight:500;letter-spacing:-.005em;color:var(--a-fg)}',
   '.buoy-row.no-icon{padding-left:18px}',
-  '.buoy-row.end-action{padding-right:4px}',
+  // Inset the action pill by the same 6px on the right as above and below, so its end is concentric with the island's.
+  '.buoy-row.end-action{padding-right:6px}',
   '.buoy-row.end-ring{padding-right:8px}',
   '.buoy-row.end-badge{padding-right:10px}',
   'button.buoy-row{border:0;background:none;cursor:pointer;text-align:left}',
