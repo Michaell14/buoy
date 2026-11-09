@@ -10,7 +10,7 @@ export type Position = 'top' | 'bottom';
 export type Resting = 'hidden' | 'pill';
 /** Light or dark palette for the Frost and Paper themes. `system` follows the OS. */
 export type ColorScheme = 'system' | 'light' | 'dark';
-export type MessageType = 'default' | 'success' | 'error' | 'warning' | 'info' | 'loading';
+export type MessageType = 'default' | 'success' | 'error' | 'warning' | 'info' | 'loading' | 'live';
 export type Tone = 'accent' | 'success' | 'error' | 'warning' | 'info';
 export type TaskStatus = 'queued' | 'running' | 'paused' | 'failed' | 'done';
 
@@ -140,6 +140,41 @@ export interface BuoyOptions {
   labels?: Partial<Labels>;
 }
 
+/** What a live activity's render function is told about the island. */
+export interface LiveView {
+  /** True while the island is open on the activity's details. */
+  readonly expanded: boolean;
+}
+
+export interface LiveOptions {
+  /** What the activity is, for screen readers. Read out when it appears or is replaced. */
+  label: string;
+  /**
+   * Fills the island with your own markup. Called when the activity appears, when it opens or
+   * closes, and on every `refresh()`, always with the same element until the view changes, so you
+   * can update text in place instead of rebuilding. Your markup can use the island's building
+   * blocks (`buoy-row`, `buoy-ic`, `buoy-title`, `buoy-exp` and friends) to match every theme.
+   */
+  render: (el: HTMLElement, view: LiveView) => void;
+  /** A tap opens the activity's details: `render` is called with `expanded: true`. Defaults to false. */
+  expandable?: boolean;
+  /** Pass the id of a live activity that is showing or queued to replace it. */
+  id?: string;
+  /** Leaves after this many milliseconds. Without it, the activity stays until you close it. */
+  duration?: number;
+  /** Called when the activity leaves, however that happens. */
+  onClose?: () => void;
+}
+
+export interface LiveHandle {
+  readonly id: string;
+  /** Calls `render` again in place. Nothing moves or is announced, so it is safe to call every second. */
+  refresh(): void;
+  /** Opens or closes the details of an expandable activity. */
+  expand(open?: boolean): void;
+  close(): void;
+}
+
 export interface MountOptions extends BuoyOptions {
   /** Element to render into. Defaults to document.body. */
   container?: HTMLElement | null;
@@ -168,6 +203,8 @@ export interface Buoy {
   dismiss(id?: string): void;
   /** Run a piece of work and show its progress. */
   track(run: (task: TaskContext) => unknown, options?: TrackOptions): TaskHandle;
+  /** Show something ongoing that you draw yourself, such as a timer, a call or a player. It stays until you close it. */
+  live(options: LiveOptions): LiveHandle;
   /** A snapshot of all tasks. */
   tasks(): TaskInfo[];
   tray: { open(): void; close(): void; toggle(): void };

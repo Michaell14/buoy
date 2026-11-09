@@ -192,6 +192,7 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
   let hoverExpand = false;
 
   function msgView(m: Msg): View {
+    if (m.render) return customView(m);
     const expanded = hasDetails(m) && (m.expanded || m.tapped || (hoverExpand && cfg.expandOnHover));
     const tone = TYPE_TONE[m.type] || USER_TONE[m.tone] || '';
     const icon = m.type === 'loading' ? spinnerHTML : iconHTML(m.icon === undefined ? TYPE_ICON[m.type] : m.icon);
@@ -222,6 +223,43 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
       radius: expanded ? 28 : null,
       spring: expanded ? SPR.expand : SPR.resize,
     };
+  }
+
+  /** A live activity: the island keeps the shape and motion, the app draws what is inside. */
+  function customView(m: Msg): View {
+    const expanded = m.expandable && m.open;
+    const label = esc(m.title);
+    const html = expanded
+      ? `<div class="buoy-custom is-expanded" role="group" aria-label="${label}" tabindex="-1" data-fk="live-x"></div>`
+      : m.expandable
+        ? `<button type="button" class="buoy-custom" data-act="live-open" data-fk="live-c" aria-expanded="false" aria-label="${label}. Show details"></button>`
+        : `<div class="buoy-custom" role="group" aria-label="${label}"></div>`;
+    return {
+      kind: 'msg',
+      key: `l:${m.id}:${expanded ? 'x' : 'c'}`,
+      sig: html,
+      html,
+      type: 'live',
+      expanded,
+      radius: expanded ? 28 : null,
+      spring: expanded ? SPR.expand : SPR.resize,
+      patch: (el) => drawLive(el, m, expanded),
+    };
+  }
+
+  // Draws only when the activity asked for it, so task progress and other redraws leave its markup alone.
+  function drawLive(el: HTMLElement, m: Msg, expanded: boolean) {
+    const box = el.querySelector<HTMLElement>('.buoy-custom');
+    if (!box || !m.render) return;
+    const stamp = `${m.rev}:${expanded ? 1 : 0}`;
+    if (box.getAttribute('data-rev') === stamp) return;
+    box.setAttribute('data-rev', stamp);
+    try {
+      m.render(box, { expanded });
+    } catch (error) {
+      if (typeof console !== 'undefined') console.error(error);
+      box.textContent = m.title;
+    }
   }
 
   function liveView(running: Task[]): View {
@@ -359,9 +397,16 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
     }
     const entering = !visible;
     if (entering) show();
+    const base = (key: string) => key.slice(0, key.lastIndexOf(':'));
+    const toggling = !!view && view.type === 'live' && next.type === 'live' && view.expanded !== next.expanded && base(view.key) === base(next.key);
+    const focusInside = !!layer && layer.contains(doc.activeElement);
     if (!view || !layer || view.key !== next.key) swap(next);
     else if (view.sig !== next.sig) rebuild(next);
     if (next.patch && layer) next.patch(layer);
+    if (toggling && focusInside && layer) {
+      const target = layer.querySelector<HTMLElement>('[data-fk="live-x"], [data-fk="live-c"]');
+      if (target) target.focus({ preventScroll: true });
+    }
     view = next;
     const el = layer as HTMLElement;
     const w = el.offsetWidth;
@@ -371,7 +416,7 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
     to('h', h, spr);
     to('r', next.radius == null ? h / 2 : next.radius, spr);
     setBubble(withBubble, running);
-    shell.style.cursor = next.kind === 'msg' && !next.expanded && state.current && state.current.type !== 'loading' ? 'pointer' : '';
+    shell.style.cursor = next.kind === 'msg' && !next.expanded && state.current && state.current.type !== 'loading' && state.current.type !== 'live' ? 'pointer' : '';
   }
 
   function swap(next: View) {
@@ -565,6 +610,7 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
   }
   function swipeAway() {
     if (state.trayOpen) closeTray();
+    else if (state.current && state.current.type === 'live') store.setOpen(state.current.id, false);
     else if (state.current) store.dismiss(state.current.id);
     else if (view && view.kind === 'attention') store.dismissAttention();
   }
@@ -585,6 +631,9 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
         if (action && action.onClick) action.onClick();
         break;
       }
+      case 'live-open':
+        if (m) store.setOpen(m.id, true);
+        break;
       case 'open-tray':
       case 'bubble':
         openTray(keyboard);
@@ -644,9 +693,10 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
       act(button, e);
       return;
     }
-    if (!view || view.kind !== 'msg' || view.expanded || !shell.contains(target)) return;
+    // A live activity's markup handles its own clicks, even if one of them just replaced the message.
+    if (!view || view.kind !== 'msg' || view.expanded || !shell.contains(target) || target.closest('.buoy-custom')) return;
     const m = state.current;
-    if (!m) return;
+    if (!m || m.type === 'live' || !view.key.startsWith(`m:${m.id}:`)) return;
     if (hasDetails(m)) store.tap(m.id);
     else if (m.type !== 'loading') store.dismiss(m.id);
   });
@@ -737,7 +787,9 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
     }
   });
   on(doc, 'pointerdown', (e) => {
-    if (state.trayOpen && !root.contains(e.target as Node)) closeTray();
+    if (root.contains(e.target as Node)) return;
+    if (state.trayOpen) closeTray();
+    else if (state.current && state.current.open) store.setOpen(state.current.id, false);
   }, { capture: true });
   on(doc, 'visibilitychange', () => store.setPaused('hidden', doc.hidden));
   on(win, 'beforeunload', (e) => {

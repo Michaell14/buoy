@@ -3,6 +3,9 @@ import type {
   BuoyOptions,
   ColorScheme,
   Labels,
+  LiveHandle,
+  LiveOptions,
+  LiveView,
   MessageAction,
   MessageOptions,
   MessageType,
@@ -35,6 +38,13 @@ export interface Msg {
   shownAt: number;
   tapped: boolean;
   onDismiss: (() => void) | null;
+  /** Live activities: draws the content. */
+  render: ((el: HTMLElement, view: LiveView) => void) | null;
+  expandable: boolean;
+  /** A live activity's details are open. */
+  open: boolean;
+  /** Bumped whenever a live activity needs drawing again. */
+  rev: number;
 }
 
 export interface Task {
@@ -80,7 +90,7 @@ export interface ResolvedOptions {
 
 export type StoreEvent = 'change' | 'progress' | 'config' | 'show';
 export type StoreListener = (event: StoreEvent, message?: Msg) => void;
-type NewMessage = MessageOptions & { type?: MessageType };
+type NewMessage = MessageOptions & { type?: MessageType; render?: Msg['render']; expandable?: boolean };
 
 /** How long a message stays when others are waiting behind it. */
 const HURRY_MS = 1500;
@@ -232,6 +242,10 @@ export function createStore() {
       shownAt: 0,
       tapped: false,
       onDismiss: o.onDismiss ?? null,
+      render: o.render ?? null,
+      expandable: !!o.expandable,
+      open: false,
+      rev: 0,
     };
   }
   function find(id: string): Msg | null {
@@ -243,6 +257,7 @@ export function createStore() {
     if (state.queue.length && Number.isFinite(m.remaining)) m.remaining = Math.min(m.remaining, HURRY_MS);
     m.timer = 0;
     m.shownAt = now();
+    m.open = false;
     startTimer(m);
     emit('show', m);
     buzz();
@@ -285,6 +300,7 @@ export function createStore() {
   }
   function update(m: Msg, title: string, o: NewMessage) {
     const fresh = make(title, { ...o, id: m.id });
+    fresh.rev = m.rev + 1;
     pauseTimer(m);
     Object.assign(m, fresh);
     if (m === state.current) arm(m);
@@ -320,6 +336,36 @@ export function createStore() {
   function safe(fn: () => void) {
     try { fn(); } catch (error) { report(error); }
   }
+  /* ───── Live activities ───── */
+
+  function live(o: LiveOptions): LiveHandle {
+    const timed = o.duration !== undefined && Number.isFinite(o.duration);
+    const id = push(o.label, {
+      id: o.id,
+      type: 'live',
+      persist: !timed,
+      duration: timed ? o.duration : Infinity,
+      onDismiss: o.onClose,
+      render: o.render,
+      expandable: o.expandable,
+    });
+    return { id, refresh: () => refresh(id), expand: (open = true) => setOpen(id, open), close: () => dismiss(id) };
+  }
+  /** Asks the island to draw a live activity again, without announcing it. */
+  function refresh(id: string) {
+    const m = find(id);
+    if (!m || !m.render) return;
+    m.rev++;
+    emit();
+  }
+  function setOpen(id: string, open: boolean) {
+    const m = find(id);
+    if (!m || !m.expandable || m.open === open) return;
+    m.open = open;
+    m.rev++;
+    emit();
+  }
+
   function tap(id: string) {
     const m = find(id);
     if (!m || m.tapped) return;
@@ -607,6 +653,9 @@ export function createStore() {
     push,
     dismiss,
     tap,
+    live,
+    refresh,
+    setOpen,
     promise,
     find,
     track,

@@ -1,5 +1,5 @@
 import { shared } from './shared';
-import type { Buoy, BuoyOptions, MessageOptions, PromiseOptions, TaskContext, TrackOptions } from './types';
+import type { Buoy, BuoyOptions, LiveOptions, MessageOptions, PromiseOptions, TaskContext, TrackOptions } from './types';
 
 const store = () => shared().store;
 
@@ -19,6 +19,7 @@ export const buoy: Buoy = Object.assign(message, {
   promise: <T>(promise: Promise<T> | (() => Promise<T>), options?: PromiseOptions<T>) => store().promise(promise, options),
   dismiss: (id?: string) => store().dismiss(id),
   track: (run: (task: TaskContext) => unknown, options?: TrackOptions) => store().track(run, options),
+  live: (options: LiveOptions) => store().live(options),
   tasks: () => store().tasks(),
   tray: {
     open: () => store().openTray(),

@@ -12,7 +12,7 @@ Messages, loading states and upload progress share one surface at the top of the
 - **Promises on the same shape.** Loading turns into success or error in place.
 - **Real progress.** Track uploads or any long job: a live ring, then a tray with pause, resume, retry and cancel.
 - **Four looks.** Ink, Frost, Paper, and Notch, which hangs from the top edge of the viewport.
-- **Small and dependency-free.** About 15 KB gzipped including styles. Styles inject themselves.
+- **Small and dependency-free.** About 16 KB gzipped including styles. Styles inject themselves.
 - **Accessible.** Real buttons, a polite live region, Esc to close, and `prefers-reduced-motion` support.
 
 ## Install
@@ -160,6 +160,46 @@ function UploadBadge() {
 ```
 
 You can also open the tray yourself: `buoy.tray.open()`, `buoy.tray.close()`, `buoy.tray.toggle()`.
+
+## Live activities
+
+For something ongoing that you want to draw yourself, such as a timer, a call, a player or a recording, use `buoy.live()`. You supply the markup; the island still handles its size, motion, queue, the bubble for tasks, and screen reader announcements. A live activity stays until you close it, and steps aside for new messages before coming back.
+
+```ts
+let left = 25 * 60;
+const timer = buoy.live({
+  label: 'Focus timer',
+  expandable: true, // a tap opens the details
+  render(el, { expanded }) {
+    const time = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+    el.innerHTML = expanded
+      ? `<div class="buoy-exp"><span class="buoy-exp-title">Focus</span><span class="buoy-exp-desc">${time} left</span></div>`
+      : `<span class="buoy-row no-icon"><span class="buoy-title">Focus</span><span class="buoy-pct">${time}</span></span>`;
+  },
+});
+
+const tick = setInterval(() => {
+  left--;
+  timer.refresh(); // draws again in place, without announcing
+  if (!left) {
+    clearInterval(tick);
+    timer.close();
+  }
+}, 1000);
+```
+
+| Option | |
+| --- | --- |
+| `label` | What the activity is, for screen readers. Read out when it appears. |
+| `render(el, { expanded })` | Fills the island. Called when it appears, when it opens or closes, and on every `refresh()`. |
+| `expandable` | A tap opens the details, and `render` gets `expanded: true`. Esc or a click outside closes them. |
+| `id` | Replaces the live activity with this id, and announces the new label. |
+| `duration` | Leaves after this many milliseconds. Without it, the activity stays until `close()`. |
+| `onClose` | Called when the activity leaves. |
+
+The handle has `refresh()`, `expand(open?)` and `close()`. An expandable activity's compact view sits inside a button, so keep its markup non-interactive and put buttons in the expanded view.
+
+To match every theme, reuse the island's own classes: `buoy-row`, `buoy-ic` (with `data-tone="accent|success|error|warn"`), `buoy-title`, `buoy-pct`, `buoy-act`, `buoy-ring`, `buoy-exp`, `buoy-exp-head`, `buoy-tile`, `buoy-exp-text`, `buoy-exp-title`, `buoy-exp-desc`, `buoy-x`, `buoy-bar`, `buoy-actions` and `buoy-btn` (with `is-primary` or `is-danger`). For anything else, these custom properties hold the current theme's colors: `--buoy-bg`, `--buoy-fg`, `--buoy-fg-2`, `--buoy-chip`, `--buoy-chip-2`, `--buoy-track`, `--buoy-tint`, `--buoy-success`, `--buoy-error` and `--buoy-warn`.
 
 ## Options
 

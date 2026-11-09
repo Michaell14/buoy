@@ -252,3 +252,56 @@ describe('tasks', () => {
     expect(s.state.current?.title).toBe('2 uploads are up');
   });
 });
+
+describe('live activities', () => {
+  const draw = () => {};
+
+  it('stays until closed, steps aside for messages and comes back', () => {
+    const s = attached();
+    let closed = 0;
+    const live = s.live({ label: 'Focus timer', render: draw, onClose: () => closed++ });
+    expect(s.state.current?.type).toBe('live');
+    vi.advanceTimersByTime(60_000);
+    expect(s.state.current?.id).toBe(live.id);
+    s.push('Link copied');
+    expect(s.state.current?.title).toBe('Link copied');
+    vi.advanceTimersByTime(3000);
+    expect(s.state.current?.id).toBe(live.id);
+    live.close();
+    expect(s.state.current).toBeNull();
+    expect(closed).toBe(1);
+  });
+
+  it('refreshes without announcing, and only opens when expandable', () => {
+    const s = attached();
+    const events: string[] = [];
+    s.subscribe((event) => events.push(event));
+    const plain = s.live({ label: 'Offline', render: draw });
+    expect(events).toContain('show');
+    events.length = 0;
+    plain.refresh();
+    expect(events).toEqual(['change']);
+    plain.expand();
+    expect(s.state.current?.open).toBe(false);
+    plain.close();
+    const call = s.live({ label: 'Call', render: draw, expandable: true });
+    const rev = s.state.current!.rev;
+    call.expand();
+    expect(s.state.current?.open).toBe(true);
+    expect(s.state.current!.rev).toBeGreaterThan(rev);
+    call.expand(false);
+    expect(s.state.current?.open).toBe(false);
+  });
+
+  it('leaves after a duration, and is replaced in place by id', () => {
+    const s = attached();
+    const first = s.live({ id: 'net', label: "You're offline", render: draw });
+    const rev = s.state.current!.rev;
+    s.live({ id: 'net', label: 'Back online', render: draw, duration: 2000 });
+    expect(s.state.current?.id).toBe(first.id);
+    expect(s.state.current?.title).toBe('Back online');
+    expect(s.state.current!.rev).toBeGreaterThan(rev);
+    vi.advanceTimersByTime(2000);
+    expect(s.state.current).toBeNull();
+  });
+});

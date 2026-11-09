@@ -54,6 +54,99 @@ describe('island', () => {
     island.destroy();
   });
 
+  it('draws a live activity, refreshes it in place and leaves other redraws alone', async () => {
+    const store = createStore();
+    const island = createIsland(store);
+    let n = 0;
+    const live = store.live({ label: 'Focus timer', render: (el) => { n++; el.textContent = `tick ${n}`; } });
+    await settle();
+    const shell = island.element.querySelector('.buoy-shell')!;
+    const sr = island.element.querySelector('.buoy-sr')!;
+    expect(shell.textContent).toBe('tick 1');
+    expect(sr.textContent).toBe('Focus timer');
+    sr.textContent = '';
+    live.refresh();
+    await settle();
+    expect(shell.textContent).toBe('tick 2');
+    expect(sr.textContent).toBe('');
+    store.configure({ theme: 'paper' });
+    await settle();
+    expect(n).toBe(2);
+    live.close();
+    await settle();
+    expect(store.state.current).toBeNull();
+    island.destroy();
+  });
+
+  it('opens an expandable live activity on tap and closes it with Escape or a click outside', async () => {
+    const store = createStore();
+    const island = createIsland(store);
+    const views: boolean[] = [];
+    store.live({
+      label: 'Call',
+      expandable: true,
+      render: (el, { expanded }) => {
+        views.push(expanded);
+        el.innerHTML = expanded ? '<button type="button" class="leave">Leave</button>' : '<span>Call 0:12</span>';
+      },
+    });
+    await settle();
+    const open = () => island.element.querySelector<HTMLButtonElement>('[data-act="live-open"]')!;
+    expect(open().getAttribute('aria-label')).toBe('Call. Show details');
+    open().click();
+    await settle();
+    expect(island.element.querySelector('.leave')).not.toBeNull();
+    island.element.querySelector<HTMLElement>('[data-fk="live-x"]')!.focus();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    await settle();
+    expect(store.state.current?.open).toBe(false);
+    expect(store.state.current?.type).toBe('live');
+    open().click();
+    await settle();
+    document.body.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+    await settle();
+    expect(store.state.current?.open).toBe(false);
+    expect(views).toEqual([false, true, false, true, false]);
+    island.destroy();
+  });
+
+  it('leaves clicks inside a live activity to its own buttons', async () => {
+    const store = createStore();
+    const island = createIsland(store);
+    let undone = 0;
+    store.live({
+      label: '3 files deleted',
+      render: (el) => {
+        el.innerHTML = '<span class="text">3 files deleted</span><button type="button" class="undo">Undo</button>';
+        el.querySelector('.undo')!.addEventListener('click', () => undone++);
+      },
+    });
+    await settle();
+    island.element.querySelector<HTMLElement>('.text')!.click();
+    expect(store.state.current?.type).toBe('live');
+    island.element.querySelector<HTMLButtonElement>('.undo')!.click();
+    expect(undone).toBe(1);
+    island.destroy();
+  });
+
+  it('keeps a message that a live activity button shows', async () => {
+    const store = createStore();
+    const island = createIsland(store);
+    const live = store.live({
+      label: '3 files deleted',
+      render: (el) => {
+        el.innerHTML = '<button type="button" class="undo">Undo</button>';
+        el.querySelector('.undo')!.addEventListener('click', () => {
+          live.close();
+          store.push('Restored 3 files', { type: 'success' });
+        });
+      },
+    });
+    await settle();
+    island.element.querySelector<HTMLButtonElement>('.undo')!.click();
+    expect(store.state.current?.title).toBe('Restored 3 files');
+  });
+
   it('opens the tray from the live pill and lists tasks', async () => {
     const store = createStore();
     const island = createIsland(store);

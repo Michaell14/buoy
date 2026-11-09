@@ -6,6 +6,9 @@
 //   --buoy-font           font stack                        (default system UI)
 //   --buoy-offset         distance from the screen edge     (default 12px)
 //   --buoy-z              stacking order                    (default 2147483000)
+// Read-only tokens for live activity markup, resolved for the current theme:
+//   --buoy-bg, --buoy-fg, --buoy-fg-2 (muted), --buoy-chip, --buoy-chip-2 (hover), --buoy-track,
+//   --buoy-tint (accent on this surface), --buoy-success, --buoy-error, --buoy-warn
 
 const INK_DARK = '--a-edge:rgba(255,255,255,.14);--a-shadow:0 14px 30px -14px rgba(0,0,0,.9),0 2px 6px -2px rgba(0,0,0,.5);';
 
@@ -27,7 +30,7 @@ const rich = (type: string, tone: string) =>
 export const css = [
   /* Root and tokens */
   '.buoy{position:fixed;left:50%;top:calc(var(--buoy-offset,12px) + env(safe-area-inset-top,0px));width:0;height:0;z-index:var(--buoy-z,2147483000);font-family:var(--buoy-font,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif);font-size:14px;font-weight:400;line-height:1.25;letter-spacing:normal;text-align:left;text-transform:none;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;'
-    + '--a-bg:var(--buoy-ink,#0B0B0C);--a-fg:#fff;--a-fg2:rgba(255,255,255,.62);--a-edge:rgba(255,255,255,.07);--a-shadow:0 14px 30px -14px rgba(0,0,0,.55),0 2px 6px -2px rgba(0,0,0,.25);--a-chip:rgba(255,255,255,.1);--a-chip-2:rgba(255,255,255,.16);--a-primary:#fff;--a-primary-fg:#0B0B0C;--a-track:rgba(255,255,255,.16);--a-row:rgba(255,255,255,.05);--a-row-2:rgba(255,255,255,.09);--a-accent:var(--buoy-accent,#2DD4BF);--a-blur:none;--a-success:#34D399;--a-error:#F87171;--a-warn:#FBBF24;--a-info:#60A5FA;--a-fill:var(--a-bg)}',
+    + '--a-bg:var(--buoy-ink,#0B0B0C);--a-fg:#fff;--a-fg2:rgba(255,255,255,.62);--a-edge:rgba(255,255,255,.07);--a-shadow:0 14px 30px -14px rgba(0,0,0,.55),0 2px 6px -2px rgba(0,0,0,.25);--a-chip:rgba(255,255,255,.1);--a-chip-2:rgba(255,255,255,.16);--a-primary:#fff;--a-primary-fg:#0B0B0C;--a-track:rgba(255,255,255,.16);--a-row:rgba(255,255,255,.05);--a-row-2:rgba(255,255,255,.09);--a-accent:var(--buoy-accent,#2DD4BF);--a-blur:none;--a-success:#34D399;--a-error:#F87171;--a-warn:#FBBF24;--a-info:#60A5FA;--a-fill:var(--a-bg);--a-danger:#DC2626;--buoy-bg:var(--a-bg);--buoy-fg:var(--a-fg);--buoy-fg-2:var(--a-fg2);--buoy-chip:var(--a-chip);--buoy-chip-2:var(--a-chip-2);--buoy-track:var(--a-track);--buoy-tint:var(--a-accent);--buoy-success:var(--a-success);--buoy-error:var(--a-error);--buoy-warn:var(--a-warn)}',
   `${SOLID}[data-scheme="dark"]{${INK_DARK}}`,
   `@media (prefers-color-scheme:dark){${SOLID}[data-scheme="system"]{${INK_DARK}}}`,
   `${FROST}{${FROST_LIGHT}}`,
@@ -120,6 +123,12 @@ export const css = [
   '.buoy-x:hover{color:var(--a-fg)}',
   '.buoy-x svg{width:16px;height:16px}',
   '.buoy-actions{display:flex;gap:8px}',
+  '.buoy-btn.is-danger{background:var(--a-danger);color:#fff}',
+  '.buoy-btn.is-danger:hover{background:var(--a-danger);opacity:.9}',
+  '.buoy-custom{display:block;color:var(--a-fg)}',
+  'button.buoy-custom{margin:0;padding:0;border:0;background:none;font:inherit;letter-spacing:inherit;text-align:inherit;cursor:pointer}',
+  '.buoy-custom:focus{outline:none}',
+  'button.buoy-custom:focus-visible{outline:2px solid var(--a-accent);outline-offset:-3px;border-radius:999px}',
   '.buoy-btn{flex:1;height:44px;border:0;border-radius:999px;background:var(--a-chip);color:var(--a-fg);font-size:14px;font-weight:600;line-height:1;cursor:pointer;transition:background-color .15s ease}',
   '.buoy-btn:hover{background:var(--a-chip-2)}',
   '.buoy-btn.is-primary{background:var(--a-primary);color:var(--a-primary-fg)}',
