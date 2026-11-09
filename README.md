@@ -284,6 +284,12 @@ Or from a CDN:
 
 Current Chrome, Edge, Firefox and Safari. The gooey split between the pill and the bubble uses an SVG filter and falls back to a plain slide where that isn't supported. Frost needs `backdrop-filter`.
 
+## Development
+
+Use Node 24 (`nvm use` reads `.nvmrc`). `npm test` runs the tests and `npm run site` serves the website at http://localhost:4173.
+
+To release, bump `version` in `package.json` and push it to `main`. CI stages the new version on npm through trusted publishing, and a maintainer approves it in the Staged Packages tab on npmjs.com.
+
 ## License
 
 MIT
