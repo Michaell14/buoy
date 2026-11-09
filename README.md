@@ -1,6 +1,6 @@
 # Buoy
 
-[![npm](https://img.shields.io/npm/v/buoy-ui)](https://www.npmjs.com/package/buoy-ui) [![bundle size](https://img.shields.io/bundlephobia/minzip/buoy-ui)](https://bundlephobia.com/package/buoy-ui) [![CI](https://github.com/Michaell14/buoy/actions/workflows/ci.yml/badge.svg)](https://github.com/Michaell14/buoy/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/buoy-ui)](https://www.npmjs.com/package/buoy-ui) [![bundle size](https://img.shields.io/bundlephobia/minzip/buoy-ui)](https://bundlephobia.com/package/buoy-ui) [![license](https://img.shields.io/npm/l/buoy-ui)](https://github.com/Michaell14/buoy/blob/main/LICENSE) [![CI](https://github.com/Michaell14/buoy/actions/workflows/ci.yml/badge.svg)](https://github.com/Michaell14/buoy/actions/workflows/ci.yml)
 
 A morphing island for notifications, promises and background tasks.
 
