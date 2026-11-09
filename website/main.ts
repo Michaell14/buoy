@@ -3,12 +3,21 @@
 import { buoy, mount } from '../src/vanilla';
 import type { TaskContext, Theme } from '../src/vanilla';
 import { LIVE_CALLS, onLiveChange, toggleLive, type LiveName } from './live';
+import { startSea } from './sea';
+
+const $ = <T extends HTMLElement = HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
+const $$ = <T extends HTMLElement = HTMLElement>(selector: string) => Array.from(document.querySelectorAll<T>(selector));
+
+// The island starts over the dark hero, and takes the dark-page styling while the hero is under it.
+const sea = $('.sea');
+const seaScheme = (): 'dark' | 'light' => (sea.getBoundingClientRect().bottom > 36 ? 'dark' : 'light');
+let scheme = seaScheme();
 
 mount({
   // The island tucks away when it has nothing to show, rather than sitting there as an empty pill.
   resting: 'hidden',
   offset: 16,
-  colorScheme: 'light',
+  colorScheme: scheme,
   // The uploads here are pretend, so leaving the page never asks for confirmation.
   guard: false,
   labels: {
@@ -19,8 +28,14 @@ mount({
   },
 });
 
-const $ = <T extends HTMLElement = HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
-const $$ = <T extends HTMLElement = HTMLElement>(selector: string) => Array.from(document.querySelectorAll<T>(selector));
+function followScheme() {
+  const next = seaScheme();
+  if (next === scheme) return;
+  scheme = next;
+  buoy.configure({ colorScheme: next });
+}
+window.addEventListener('scroll', followScheme, { passive: true });
+window.addEventListener('resize', followScheme);
 
 /* ───── Code ───── */
 
@@ -94,6 +109,20 @@ function remember(key: string, value?: string): string | null {
     return null;
   }
 }
+/* ───── Sea ───── */
+
+startSea({
+  band: sea,
+  canvas: $<HTMLCanvasElement>('.sea-gl'),
+  calm: [$('.tagline'), $('.install')],
+  head: $('.head'),
+  toggle: $<HTMLButtonElement>('#sea-toggle'),
+  paused: remember('buoy-motion') === 'paused',
+  onToggle: (paused) => remember('buoy-motion', paused ? 'paused' : 'on'),
+});
+
+/* ───── Install command ───── */
+
 let manager = remember('buoy-pm') ?? 'npm';
 if (!(manager in COMMANDS)) manager = 'npm';
 const installCommand = () => COMMANDS[manager];
