@@ -4,19 +4,11 @@ import { buoy, mount } from '../src/vanilla';
 import type { TaskContext, Theme } from '../src/vanilla';
 import { LIVE_CALLS, onLiveChange, toggleLive, type LiveName } from './live';
 
-const $ = <T extends HTMLElement = HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
-const $$ = <T extends HTMLElement = HTMLElement>(selector: string) => Array.from(document.querySelectorAll<T>(selector));
-
-// The island starts over the dark hero, and takes the dark-page styling while the hero is under it.
-const sea = $('.sea');
-const seaScheme = (): 'dark' | 'light' => (sea.getBoundingClientRect().bottom > 36 ? 'dark' : 'light');
-let scheme = seaScheme();
-
 mount({
   // The island tucks away when it has nothing to show, rather than sitting there as an empty pill.
   resting: 'hidden',
   offset: 16,
-  colorScheme: scheme,
+  colorScheme: 'light',
   // The uploads here are pretend, so leaving the page never asks for confirmation.
   guard: false,
   labels: {
@@ -27,14 +19,8 @@ mount({
   },
 });
 
-function followScheme() {
-  const next = seaScheme();
-  if (next === scheme) return;
-  scheme = next;
-  buoy.configure({ colorScheme: next });
-}
-window.addEventListener('scroll', followScheme, { passive: true });
-window.addEventListener('resize', followScheme);
+const $ = <T extends HTMLElement = HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
+const $$ = <T extends HTMLElement = HTMLElement>(selector: string) => Array.from(document.querySelectorAll<T>(selector));
 
 /* ───── Code ───── */
 
