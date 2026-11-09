@@ -2,6 +2,7 @@
 // so the island on the site is always the code on main.
 import { buoy, mount } from '../src/vanilla';
 import type { TaskContext, Theme } from '../src/vanilla';
+import { LIVE_CALLS, onLiveChange, toggleLive, type LiveName } from './live';
 
 mount({
   // The island tucks away when it has nothing to show, rather than sitting there as an empty pill.
@@ -210,6 +211,24 @@ chips.forEach((chip) =>
   }),
 );
 showCall('message');
+
+/* ───── Live activities ───── */
+
+const liveCall = $('#live-call');
+const liveChips = $$<HTMLButtonElement>('[data-live]');
+onLiveChange((name, on) => {
+  const chip = liveChips.find((c) => c.dataset.live === name);
+  if (chip && chip.hasAttribute('aria-pressed')) chip.setAttribute('aria-pressed', String(on));
+});
+liveChips.forEach((chip) =>
+  chip.addEventListener('click', () => {
+    const name = chip.dataset.live as LiveName;
+    endWelcome();
+    toggleLive(name);
+    setCode(liveCall, LIVE_CALLS[name]);
+  }),
+);
+setCode(liveCall, LIVE_CALLS.timer);
 
 $('#install').addEventListener('click', () => copy(INSTALL, $('#install-text')));
 

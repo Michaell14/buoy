@@ -59,6 +59,21 @@
 <p class="note">The island at the top of this page is the real component. Press a button and watch it change.</p>
 </section>
 
+<section class="try" aria-labelledby="live-h">
+<h2 id="live-h" class="label">Live activities</h2>
+<div class="chips">
+<button type="button" class="chip" data-live="timer" aria-pressed="false">Focus timer</button>
+<button type="button" class="chip" data-live="music" aria-pressed="false">Now playing</button>
+<button type="button" class="chip" data-live="call" aria-pressed="false">Call</button>
+<button type="button" class="chip" data-live="undo">Undo</button>
+<button type="button" class="chip" data-live="offline">Offline</button>
+<button type="button" class="chip" data-live="record" aria-pressed="false">Recording</button>
+</div>
+<pre class="call" tabindex="0"><code id="live-call">const timer = buoy.live({ label: 'Focus timer', expandable: true, render });
+setInterval(() =&gt; timer.refresh(), 1000);</code></pre>
+<p class="note">Things that keep going stay on the island until you stop them. While a timer, song, call or recording runs, tap the island to open its controls.</p>
+</section>
+
 <section class="block" aria-labelledby="states-h">
 <div class="block-head">
 <h2 id="states-h">One shape, every state</h2>

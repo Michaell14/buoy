@@ -32,6 +32,14 @@
   --code-fn: #0F766E;
   --code-tag: #1D4ED8;
   --code-com: #71717A;
+  /* Live activity demos: album art and call avatars. */
+  --art-0: linear-gradient(135deg, #2DD4BF 0%, #0F766E 45%, #1E293B 100%);
+  --art-1: linear-gradient(135deg, #FBBF24 0%, #EA580C 50%, #7C2D12 100%);
+  --art-2: linear-gradient(135deg, #A78BFA 0%, #4F46E5 50%, #1E1B4B 100%);
+  --face-1: #A7F3D0;
+  --face-2: #BFDBFE;
+  --face-3: #E4E4E7;
+  --face-fg: #0B0B0C;
   --sans: Geist, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   /* The island picks up the page's face. */
@@ -373,6 +381,123 @@ p { text-wrap: pretty; }
 .details > div { display: flex; flex-direction: column; gap: 6px; }
 .details h3 { margin: 0; font-size: 15px; font-weight: 600; }
 .details p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--muted); }
+
+/* ───── Live activities ─────
+   Drawn inside the island with buoy.live(). Colors come from the island's theme tokens (--buoy-*). */
+.chip[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+
+.buoy .lv-media { padding-right: 16px; }
+.buoy .lv-art {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 10px;
+  background: var(--art-0);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.buoy .lv-art[data-i="1"] { background: var(--art-1); }
+.buoy .lv-art[data-i="2"] { background: var(--art-2); }
+.buoy .lv-art.is-large { width: 56px; height: 56px; border-radius: 14px; }
+
+.buoy .lv-bars { display: flex; align-items: center; gap: 2px; height: 24px; }
+.buoy .lv-bars i { width: 3px; height: 20px; border-radius: 2px; background: var(--buoy-tint); transform: scaleY(0.2); transition: transform 0.2s ease; }
+.buoy .lv-bars.is-plain i { background: currentColor; }
+.buoy .lv-bars.is-on i:nth-child(7n + 1) { transform: scaleY(0.45); }
+.buoy .lv-bars.is-on i:nth-child(7n + 2) { transform: scaleY(0.85); }
+.buoy .lv-bars.is-on i:nth-child(7n + 3) { transform: scaleY(0.6); }
+.buoy .lv-bars.is-on i:nth-child(7n + 4) { transform: scaleY(1); }
+.buoy .lv-bars.is-on i:nth-child(7n + 5) { transform: scaleY(0.7); }
+.buoy .lv-bars.is-on i:nth-child(7n + 6) { transform: scaleY(0.4); }
+.buoy .lv-bars.is-on i:nth-child(7n) { transform: scaleY(0.75); }
+
+.buoy .lv-dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--buoy-success);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--buoy-success) 22%, transparent);
+}
+.buoy .lv-dot.is-rec { width: 10px; height: 10px; background: var(--buoy-error); box-shadow: 0 0 0 5px color-mix(in srgb, var(--buoy-error) 20%, transparent); }
+.buoy .lv-dot.is-rec:not(.is-on) { opacity: 0.45; box-shadow: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .buoy .lv-bars.is-on i { animation: lv-level 0.9s ease-in-out infinite alternate; }
+  .buoy .lv-bars.is-on i:nth-child(2n) { animation-duration: 0.7s; animation-delay: -0.35s; }
+  .buoy .lv-bars.is-on i:nth-child(3n) { animation-duration: 1.1s; animation-delay: -0.6s; }
+  .buoy .lv-dot { animation: lv-pulse 1.6s ease-in-out infinite; }
+  .buoy .lv-dot.is-rec:not(.is-on) { animation: none; }
+}
+@keyframes lv-level { from { transform: scaleY(0.2); } to { transform: scaleY(1); } }
+@keyframes lv-pulse { 50% { opacity: 0.55; } }
+
+.buoy .lv-note { color: var(--buoy-fg-2); font-weight: 400; }
+
+.buoy .lv-readout { display: flex; align-items: baseline; justify-content: space-between; padding: 0 4px; }
+.buoy .lv-big { font-family: var(--sans); font-size: 46px; font-weight: 500; line-height: 1; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.buoy .lv-line { margin: 0 4px; height: 6px; }
+
+.buoy .lv-scrub {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--buoy-fg-2);
+  font-variant-numeric: tabular-nums;
+}
+.buoy .lv-scrub .lv-line { flex: 1; margin: 0; }
+.buoy .lv-scrub .lv-line > i { background: var(--buoy-fg); }
+
+.buoy .lv-transport { display: flex; align-items: center; justify-content: center; gap: 28px; }
+.buoy .lv-ctl {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--buoy-fg);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.buoy .lv-ctl:hover { background: var(--buoy-chip); }
+.buoy .lv-ctl:focus-visible { outline: 2px solid var(--buoy-tint); outline-offset: 2px; }
+.buoy .lv-ctl svg { width: 22px; height: 22px; }
+.buoy .buoy-btn.lv-play { flex: none; width: 52px; height: 52px; padding: 0; display: grid; place-items: center; }
+.buoy .lv-play svg { width: 22px; height: 22px; stroke-width: 2.6; }
+
+.buoy .lv-faces { display: flex; width: 64px; flex: none; }
+.buoy .lv-faces span {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--face-fg);
+  background: var(--face-1);
+  box-shadow: 0 0 0 2px var(--buoy-bg);
+}
+.buoy .lv-faces span + span { margin-left: -8px; background: var(--face-2); }
+.buoy .lv-faces span + span + span { background: var(--face-3); }
+
+.buoy .lv-with-icon { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.buoy .lv-with-icon svg { width: 16px; height: 16px; }
+
+.buoy .lv-wave { display: flex; align-items: center; justify-content: center; gap: 4px; height: 28px; padding: 4px 4px 0; }
+.buoy .lv-wave i { width: 4px; height: 4px; flex: none; border-radius: 2px; background: var(--buoy-fg); transition: height 0.18s ease; }
+.buoy .lv-wave i.is-quiet { opacity: 0.35; }
+
+.buoy .lv-undo { padding-right: 10px; }
+.buoy .lv-undo .buoy-act { padding-right: 4px; }
+.buoy .lv-countdown { width: 22px; height: 22px; }
+.buoy .lv-countdown .val { stroke: var(--buoy-fg); animation: lv-count linear forwards; }
+.buoy .buoy-stage:hover .lv-countdown .val { animation-play-state: paused; }
+@keyframes lv-count { from { stroke-dashoffset: 0; } to { stroke-dashoffset: 65.97; } }
 
 /* ───── Footer ───── */
 .foot {
