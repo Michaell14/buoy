@@ -55,7 +55,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm test && npm run build",
-    "prepublishOnly": "npm run check"
+    "prepublishOnly": "npm run check",
+    "lint:package": "publint && attw --pack . --exclude-entrypoints styles.css"
   },
   "peerDependencies": {
     "react": ">=18"
@@ -77,9 +78,11 @@
     "background-tasks"
   ],
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "jsdom": "^31.0.0",
+    "publint": "^0.3.25",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "tsup": "^9.0.0",

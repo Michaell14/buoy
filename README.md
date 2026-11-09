@@ -1,5 +1,7 @@
 # Atoll
 
+[![CI](https://github.com/Michaell14/atoll/actions/workflows/ci.yml/badge.svg)](https://github.com/Michaell14/atoll/actions/workflows/ci.yml)
+
 A morphing island for notifications, promises and background tasks.
 
 Messages, loading states and upload progress share one surface at the top of the screen. It queues, it splits in two when a message arrives during an upload, and it opens into a tray when you need the details. Works with React, or with no framework at all.
