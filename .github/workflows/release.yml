@@ -51,7 +51,10 @@ jobs:
       - if: steps.version.outputs.new == 'true'
         run: npm ci
 
-      # prepublishOnly runs the typecheck, tests and build first.
+      - name: Typecheck, test and build
+        if: steps.version.outputs.new == 'true'
+        run: npm run check
+
       - if: steps.version.outputs.new == 'true'
         run: npm stage publish
 
