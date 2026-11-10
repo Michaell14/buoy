@@ -9,7 +9,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const out = join(here, 'dist');
 const serve = process.argv.includes('--serve');
 const { version } = JSON.parse(await readFile(join(here, '..', 'package.json'), 'utf8'));
-const STATIC = ['index.html', 'styles.css', 'favicon.svg', 'registry/buoy.tsx'];
+const STATIC = ['index.html', 'styles.css', 'favicon.svg', 'registry/buoy.tsx', 'og/og.png', 'og/og.mp4'];
 
 // A shadcn registry item, so `npx shadcn add https://buoy-ui.vercel.app/r/buoy.json` installs
 // buoy-ui with the project's package manager and adds components/ui/buoy.tsx.
@@ -33,6 +33,9 @@ async function copyStatic() {
   await writeFile(join(out, 'index.html'), html.replaceAll('{{version}}', version));
   await copyFile(join(here, 'styles.css'), join(out, 'styles.css'));
   await copyFile(join(here, 'favicon.svg'), join(out, 'favicon.svg'));
+  // The link preview: a still for og:image and a short loop for og:video, recorded by og/render.mjs.
+  await copyFile(join(here, 'og', 'og.png'), join(out, 'og.png'));
+  await copyFile(join(here, 'og', 'og.mp4'), join(out, 'og.mp4'));
   await writeRegistry();
 }
 

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Buoy link preview</title>
+<!--
+  The animated link preview (og:video) and its still frame (og:image), 1200 × 630.
+  The island, at three times its real size, runs through its core states on a 6 second loop:
+  a message, a promise that saves, an upload, then an expanded card, and morphs back to the start.
+  render.mjs records this page into og.mp4 and og.png.
+-->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400&amp;display=swap">
+<style>
+:root {
+  --paper: #F6F6F7;
+  --dot: #DCDCE0;
+  --ink: #0B0B0C;
+  --muted: #5B5B63;
+  --on-ink-2: rgba(255, 255, 255, 0.62);
+  --chip: rgba(255, 255, 255, 0.1);
+  --track: rgba(255, 255, 255, 0.16);
+  --success: #34D399;
+  --success-chip: rgba(52, 211, 153, 0.16);
+  --accent: #5EEAD4;
+  --accent-chip: rgba(94, 234, 212, 0.18);
+  /* One loop, and the island's morph: a short spring, as on the real component. */
+  --loop: 6s;
+  --spring: cubic-bezier(0.3, 1.32, 0.45, 1);
+}
+* { box-sizing: border-box; margin: 0; }
+body { margin: 0; background: var(--paper); }
+.frame {
+  position: relative;
+  width: 1200px;
+  height: 630px;
+  overflow: hidden;
+  background-color: var(--paper);
+  background-image: radial-gradient(var(--dot) 1.2px, transparent 1.5px);
+  background-size: 18px 18px;
+  color: var(--ink);
+  font-family: Geist, ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The island grows down from its top edge, around its centre line. */
+.island {
+  position: absolute;
+  top: 118px;
+  left: 50%;
+  width: 760px;
+  height: 292px;
+  border-radius: 64px;
+  overflow: hidden;
+  background: var(--ink);
+  color: #FFFFFF;
+  transform: translateX(-50%);
+  box-shadow: 0 44px 80px -40px rgba(0, 0, 0, 0.6), 0 8px 18px -8px rgba(0, 0, 0, 0.25);
+  animation: morph var(--loop) infinite;
+}
+/* The loop starts on the way back from the expanded card, so its last frame flows into its first. */
+@keyframes morph {
+  0% { width: 760px; height: 292px; border-radius: 64px; animation-timing-function: var(--spring); }
+  7.5%, 20% { width: 404px; height: 120px; border-radius: 60px; animation-timing-function: var(--spring); }
+  27.5%, 40% { width: 338px; height: 120px; border-radius: 60px; animation-timing-function: var(--spring); }
+  47.5%, 60% { width: 480px; height: 120px; border-radius: 60px; animation-timing-function: var(--spring); }
+  67.5%, 80% { width: 584px; height: 120px; border-radius: 60px; animation-timing-function: var(--spring); }
+  87.5%, 100% { width: 760px; height: 292px; border-radius: 64px; }
+}
+
+/* Each state is laid out at its own width, centred, and revealed as the island grows to it. */
+.state {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 0 48px 0 15px;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(-50%);
+  animation: var(--loop) linear infinite;
+}
+.s1 { width: 404px; animation-name: s1; }
+.s2 { width: 338px; animation-name: s2; }
+.s3 { width: 480px; animation-name: s3; }
+.s4 { width: 584px; padding-right: 21px; animation-name: s4; }
+.s5 { width: 760px; flex-direction: column; align-items: stretch; justify-content: center; gap: 28px; padding: 34px; animation-name: s5; }
+/* In 0.04s after the state begins, over 0.22s; out over its last 0.14s. */
+@keyframes s1 { 0%, 0.67% { opacity: 0; filter: blur(3px); transform: translateX(-50%) scale(0.96); } 4.33%, 17.67% { opacity: 1; filter: blur(0); transform: translateX(-50%) scale(1); } 20%, 100% { opacity: 0; filter: blur(3px); transform: translateX(-50%) scale(0.96); } }
+@keyframes s2 { 0%, 20.67% { opacity: 0; filter: blur(3px); transform: translateX(-50%) scale(0.96); } 24.33%, 37.67% { opacity: 1; filter: blur(0); transform: translateX(-50%) scale(1); } 40%, 100% { opacity: 0; filter: blur(3px); transform: translateX(-50%) scale(0.96); } }
+@keyframes s3 { 0%, 40.67% { opacity: 0; filter: blur(3px); transform: translateX(-50%) scale(0.96); } 44.33%, 57.67% { opacity: 1; filter: blur(0); transform: translateX(-50%) scale(1); } 60%, 100% { opacity: 0; filter: blur(3px); transform: translateX(-50%) scale(0.96); } }
+@keyframes s4 { 0%, 60.67% { opacity: 0; filter: blur(3px); transform: translateX(-50%) scale(0.96); } 64.33%, 77.67% { opacity: 1; filter: blur(0); transform: translateX(-50%) scale(1); } 80%, 100% { opacity: 0; filter: blur(3px); transform: translateX(-50%) scale(0.96); } }
+@keyframes s5 { 0%, 80.67% { opacity: 0; filter: blur(3px); transform: translateX(-50%) scale(0.96); } 84.33%, 97.67% { opacity: 1; filter: blur(0); transform: translateX(-50%) scale(1); } 100% { opacity: 0; filter: blur(3px); transform: translateX(-50%) scale(0.96); } }
+
+.icon { flex: none; width: 90px; height: 90px; border-radius: 999px; display: grid; place-items: center; background: var(--chip); }
+.icon svg { width: 44px; height: 44px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.icon.is-success { background: var(--success-chip); color: var(--success); }
+.icon.is-success svg { stroke-width: 2.5; }
+.icon.is-accent { background: var(--accent-chip); color: var(--accent); }
+.label { font-size: 42px; font-weight: 500; letter-spacing: -0.015em; }
+.spinner { width: 40px; height: 40px; border-radius: 999px; border: 4px solid var(--track); border-top-color: #FFFFFF; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.ring { flex: none; width: 78px; height: 78px; }
+.ring circle { fill: none; stroke-width: 3.5; }
+.ring .track { stroke: var(--track); }
+.ring .value { stroke: var(--accent); stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: 100; animation: fill var(--loop) linear infinite; }
+@keyframes fill { 0%, 62.5% { stroke-dashoffset: 100; } 79.17%, 100% { stroke-dashoffset: 8; } }
+.head { display: flex; align-items: center; gap: 24px; }
+.sub { margin-top: 8px; font-size: 32px; color: var(--on-ink-2); }
+.actions { display: flex; gap: 16px; }
+.button { flex: 1; height: 88px; border-radius: 44px; display: grid; place-items: center; font-size: 32px; font-weight: 500; background: var(--chip); }
+.button.is-primary { background: #FFFFFF; color: var(--ink); }
+
+.brand { position: absolute; left: 56px; bottom: 44px; display: flex; align-items: center; gap: 12px; font-size: 34px; font-weight: 600; letter-spacing: -0.02em; }
+.brand svg { width: 40px; height: 40px; }
+.brand circle { fill: none; stroke: var(--accent); stroke-width: 4.5; stroke-linecap: round; stroke-dasharray: 54 70; }
+.brand rect { fill: currentColor; }
+.install { position: absolute; right: 56px; bottom: 50px; font: 400 22px 'Geist Mono', ui-monospace, monospace; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="frame">
+<div class="island">
+<div class="state s1"><span class="icon"><svg viewBox="0 0 24 24"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.1 1.1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.1-1.1"/></svg></span><span class="label">Link copied</span></div>
+<div class="state s2"><span class="icon"><span class="spinner"></span></span><span class="label">Saving…</span></div>
+<div class="state s3"><span class="icon is-success"><svg viewBox="0 0 24 24"><path d="M5.5 12.5l4 4L18.5 7.5"/></svg></span><span class="label">Saved to drafts</span></div>
+<div class="state s4"><span class="icon is-accent"><svg viewBox="0 0 24 24"><path d="M12 15V4.5"/><path d="M7.5 9L12 4.5L16.5 9"/><path d="M4.5 15v2.5a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V15"/></svg></span><span class="label">Uploading 3 files</span><svg class="ring" viewBox="0 0 28 28"><circle class="track" cx="14" cy="14" r="10.5"/><circle class="value" cx="14" cy="14" r="10.5" pathLength="100" transform="rotate(-90 14 14)"/></svg></div>
+<div class="state s5"><div class="head"><span class="icon is-accent"><svg viewBox="0 0 24 24"><path d="M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z"/><path d="M14 3.5V8h4.5"/><path d="M9 13h6"/><path d="M9 16.5h4"/></svg></span><div><div class="label">Export ready</div><div class="sub">Q3-report.pdf · 4.2 MB</div></div></div><div class="actions"><span class="button is-primary">Open</span><span class="button">Show in folder</span></div></div>
+</div>
+<div class="brand"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="11" transform="rotate(-60 16 16)"/><rect x="9" y="12.5" width="14" height="7" rx="3.5"/></svg>Buoy</div>
+<div class="install">npm i buoy-ui</div>
+</div>
+</body>
+</html>

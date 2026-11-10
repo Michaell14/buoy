@@ -298,6 +298,8 @@ Current Chrome, Edge, Firefox and Safari. The gooey split between the pill and t
 
 Use Node 24 (`nvm use` reads `.nvmrc`). `npm test` runs the tests and `npm run site` serves the website at http://localhost:4173.
 
+The website's link preview (`og.mp4` and `og.png`) is recorded from `website/og/preview.html`. After changing that page, run `node website/og/render.mjs`, which needs Playwright with Chromium and ffmpeg.
+
 To release, bump `version` in `package.json` and push it to `main`. CI stages the new version on npm through trusted publishing, and a maintainer approves it in the Staged Packages tab on npmjs.com.
 
 ## License
