@@ -309,11 +309,12 @@ export function createStore() {
   function dismiss(id?: string) {
     const cur = state.current;
     if (id === undefined) {
-      // No id: clear everything.
-      for (const m of [cur, ...state.queue]) if (m) pauseTimer(m);
+      // No id: clear everything. Every message that leaves hears about it, shown or waiting.
+      const gone = [cur, ...state.queue].filter((m): m is Msg => !!m);
+      for (const m of gone) pauseTimer(m);
       state.queue = [];
       state.current = null;
-      if (cur && cur.onDismiss) safe(cur.onDismiss);
+      for (const m of gone) if (m.onDismiss) safe(m.onDismiss);
       emit();
       return;
     }
@@ -327,9 +328,12 @@ export function createStore() {
         arm(next);
       }
     } else {
+      // Waiting in the queue, such as a live activity that stepped aside for a message.
       const i = state.queue.findIndex((m) => m.id === id);
       if (i < 0) return;
-      state.queue.splice(i, 1);
+      const [gone] = state.queue.splice(i, 1);
+      pauseTimer(gone);
+      if (gone.onDismiss) safe(gone.onDismiss);
     }
     emit();
   }
