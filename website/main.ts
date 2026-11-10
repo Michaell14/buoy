@@ -164,7 +164,7 @@ function copyFromIsland() {
  */
 function note(show: (id?: string) => void, ms: number) {
   if (!welcoming) {
-    show();
+    show(DEMO);
     return;
   }
   clearTimeout(welcomeTimer);
@@ -183,6 +183,10 @@ buoy('Welcome to Buoy', { id: WELCOME, icon: LOGO, persist: true });
 welcomeTimer = window.setTimeout(showInstall, 2000);
 
 /* ───── Demos ───── */
+
+// The demos on the page share one message. A new one replaces it in place at once, rather than
+// waiting its turn in the island's queue as separate messages would.
+const DEMO = 'demo';
 
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 const save = (ms: number) => wait(ms);
@@ -217,16 +221,17 @@ const busy = () => buoy.tasks().some((t) => t.status === 'running' || t.status =
 const DEMOS: Record<string, { call: string; run: () => void }> = {
   message: {
     call: "buoy('Link copied', { icon: 'link' });",
-    run: () => buoy('Link copied', { icon: 'link' }),
+    run: () => buoy('Link copied', { id: DEMO, icon: 'link' }),
   },
   promise: {
     call: "buoy.promise(save(), { loading: 'Saving…', success: 'Saved to drafts' });",
-    run: () => void buoy.promise(save(1400), { loading: 'Saving…', success: 'Saved to drafts', error: "Couldn't save" }),
+    run: () => void buoy.promise(save(1400), { id: DEMO, loading: 'Saving…', success: 'Saved to drafts', error: "Couldn't save" }),
   },
   expanded: {
     call: "buoy('Export ready', { description, actions, expanded: true });",
     run: () =>
       buoy('Export ready', {
+        id: DEMO,
         description: 'Q3-report.pdf · 4.2 MB',
         icon: 'file',
         tone: 'accent',
@@ -241,22 +246,28 @@ const DEMOS: Record<string, { call: string; run: () => void }> = {
     call: "buoy.error(\"Couldn't save\", { action: { label: 'Retry', onClick: retry } });",
     run: () =>
       buoy.error("Couldn't save", {
-        action: { label: 'Retry', onClick: () => void buoy.promise(save(1100), { loading: 'Saving…', success: 'Saved to drafts' }) },
+        id: DEMO,
+        action: { label: 'Retry', onClick: () => void buoy.promise(save(1100), { id: DEMO, loading: 'Saving…', success: 'Saved to drafts' }) },
       }),
   },
   upload: {
     call: 'buoy.track((task) => upload(file, task), { label: file.name });',
-    run: () => upload('beach-sunset.heic', 24, 3.4),
+    run: () => {
+      // The upload shows in the island as soon as the last demo's message steps away.
+      buoy.dismiss(DEMO);
+      upload('beach-sunset.heic', 24, 3.4);
+    },
   },
   two: {
     call: "buoy('Message sent', { icon: 'send' }); // while an upload runs",
     run: () => {
       if (busy()) {
-        buoy('Message sent', { icon: 'send' });
+        buoy('Message sent', { id: DEMO, icon: 'send' });
         return;
       }
+      buoy.dismiss(DEMO);
       upload('holiday-video.mov', 48, 5.5);
-      setTimeout(() => buoy('Message sent', { icon: 'send' }), 700);
+      setTimeout(() => buoy('Message sent', { id: DEMO, icon: 'send' }), 700);
     },
   },
 };
@@ -289,7 +300,7 @@ liveChips.forEach((chip) =>
   chip.addEventListener('click', () => {
     const name = chip.dataset.live as LiveName;
     endWelcome();
-    toggleLive(name);
+    toggleLive(name, () => buoy.dismiss(DEMO));
     setCode(liveCall, LIVE_CALLS[name]);
   }),
 );

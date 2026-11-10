@@ -13,7 +13,8 @@ const I = {
   video: svg('<rect x="3.5" y="6.5" width="12" height="11" rx="2.5"/><path d="M15.5 10.5l5-3v9l-5-3z"/>'),
   videoOff: svg('<path d="M3.5 3.5l17 17"/><path d="M15.5 12.5v-3.5a2.5 2.5 0 0 0-2.5-2.5H9"/><path d="M5 6.7A2.5 2.5 0 0 0 3.5 9v6A2.5 2.5 0 0 0 6 17.5h7a2.5 2.5 0 0 0 2-1"/><path d="M15.5 10.5l5-3v9"/>'),
   trash: svg('<path d="M4.5 7h15"/><path d="M9.5 7V4.5h5V7"/><path d="M6.5 7l1 12.5h9l1-12.5"/>'),
-  wifiOff: svg('<path d="M3.5 3.5l17 17"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M5 12.5a10 10 0 0 1 4.6-2.6"/><path d="M19 12.5a10 10 0 0 0-3.2-2.1"/><path d="M12 20h.01"/>'),
+  // The Wi-Fi icon below with a slash through it, its arcs broken where the slash crosses, so both sit centred alike.
+  wifiOff: svg('<path d="M3.5 3.5l17 17"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M5 12.5A10 10 0 0 1 8.81 10.16"/><path d="M10.95 9.69A10 10 0 0 1 19 12.5"/><path d="M2 8.5A15 15 0 0 1 4.96 6.44"/><path d="M6.97 5.55A15 15 0 0 1 22 8.5"/><path d="M12 20h.01"/>'),
   wifi: svg('<path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M5 12.5a10 10 0 0 1 14 0"/><path d="M2 8.5a15 15 0 0 1 20 0"/><path d="M12 20h.01"/>'),
   x: svg('<path d="M6.5 6.5l11 11"/><path d="M17.5 6.5l-11 11"/>'),
   pause: svg('<path d="M9 6v12"/><path d="M15 6v12"/>'),
@@ -287,15 +288,17 @@ function offline() {
   started('offline', lost);
   back = window.setTimeout(() => {
     lost.close();
-    buoy.live({
+    const online = buoy.live({
       label: 'Back online. 3 changes synced.',
       duration: 2600,
+      onClose: () => stopped('offline'),
       render(el) {
         build(el, 'c', () =>
           `<div class="buoy-row"><span class="buoy-ic" data-tone="success">${I.wifi}</span><span class="buoy-title">Back online</span>` +
           '<span class="lv-note">3 changes synced</span></div>');
       },
     });
+    started('offline', online);
   }, 3200);
 }
 
@@ -371,11 +374,16 @@ export const LIVE_CALLS: Record<Name, string> = {
   record: "const memo = buoy.live({ label: 'Recording', expandable: true, render });",
 };
 
-/** Starts a demo, or stops it if it is one that keeps going and is already running. */
-export function toggleLive(name: Name): void {
+/**
+ * Starts a demo, or stops it if it is one that keeps going and is already running.
+ * One demo runs at a time: starting one ends the others first. `clear` runs just before it starts.
+ */
+export function toggleLive(name: Name, clear: () => void = () => {}): void {
   const live = running.get(name);
   if (live && TOGGLES.has(name)) return live.close();
+  for (const [other, handle] of running) if (other !== name) handle.close();
   if (live) live.close();
+  clear();
   START[name]();
 }
 

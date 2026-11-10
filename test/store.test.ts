@@ -159,6 +159,37 @@ describe('promise', () => {
     expect(s.state.current).toBeNull();
   });
 
+  it('can show the promise in an existing message, by id', async () => {
+    const s = attached();
+    s.push('Link copied', { id: 'demo' });
+    let resolve!: () => void;
+    s.promise(new Promise<void>((r) => (resolve = r)), { id: 'demo', loading: 'Saving…', success: 'Saved' });
+    expect(s.state.current?.id).toBe('demo');
+    expect(s.state.current?.type).toBe('loading');
+    expect(s.state.queue).toHaveLength(0);
+    resolve();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(s.state.current?.title).toBe('Saved');
+  });
+
+  it('drops its result when a newer message has taken over its id', async () => {
+    const s = attached();
+    let resolve!: () => void;
+    s.promise(new Promise<void>((r) => (resolve = r)), { id: 'demo', loading: 'Saving…', success: 'Saved' });
+    s.push('Link copied', { id: 'demo' });
+    resolve();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(s.state.current?.title).toBe('Link copied');
+    s.dismiss('demo');
+    let resolveLater!: () => void;
+    s.promise(new Promise<void>((r) => (resolveLater = r)), { id: 'demo', success: 'Saved' });
+    s.dismiss('demo');
+    s.push('Message sent', { id: 'demo' });
+    resolveLater();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(s.state.current?.title).toBe('Message sent');
+  });
+
   it('turns a rejection into an error that stays, with a retry button', async () => {
     const s = attached();
     const retry = vi.fn();
