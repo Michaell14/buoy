@@ -1,11 +1,13 @@
 // The "Live activities" demos: six things that keep going, each drawn with buoy.live().
 // The markup reuses the island's own classes (buoy-row, buoy-exp, buoy-btn…), so every theme fits.
+// The timer, player and recorder are also exported as activities over a state you own, so the examples
+// page can drive the same island from a component of its own.
 import { buoy } from '../src/vanilla';
 import type { LiveHandle } from '../src/vanilla';
 
 const svg = (paths: string) =>
   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
-const I = {
+export const I = {
   timer: svg('<circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5l2.5 2"/><path d="M9.5 3h5"/>'),
   phone: svg('<path d="M6.5 4h3l1.5 4-2 1.5a11 11 0 0 0 5.5 5.5l1.5-2 4 1.5v3a2 2 0 0 1-2 2A16 16 0 0 1 4.5 6a2 2 0 0 1 2-2z"/>'),
   mic: svg('<rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><path d="M12 17.5v3"/>'),
@@ -24,19 +26,19 @@ const I = {
   stop: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor"/></svg>',
 };
 
-const clock = (s: number) => `${Math.floor(s / 60)}:${String(Math.max(0, s) % 60).padStart(2, '0')}`;
+export const clock = (s: number) => `${Math.floor(s / 60)}:${String(Math.max(0, s) % 60).padStart(2, '0')}`;
 const RING = 2 * Math.PI * 10.5;
-const ring = (fraction: number, extra = '') =>
+export const ring = (fraction: number, extra = '') =>
   `<svg class="buoy-ring ${extra}" viewBox="0 0 28 28" aria-hidden="true"><circle class="trk" cx="14" cy="14" r="10.5"/>` +
   `<circle class="val" cx="14" cy="14" r="10.5" style="stroke-dasharray:${RING.toFixed(2)};stroke-dashoffset:${(RING * (1 - fraction)).toFixed(2)}"/></svg>`;
-const setRing = (el: HTMLElement, fraction: number) => {
+export const setRing = (el: HTMLElement, fraction: number) => {
   const val = el.querySelector<SVGElement>('.buoy-ring .val');
   if (val) val.style.strokeDashoffset = (RING * (1 - fraction)).toFixed(2);
 };
-const bars = (n: number, extra = '') => `<span class="lv-bars ${extra}" aria-hidden="true">${'<i></i>'.repeat(n)}</span>`;
+export const bars = (n: number, extra = '') => `<span class="lv-bars ${extra}" aria-hidden="true">${'<i></i>'.repeat(n)}</span>`;
 
 /** Builds a view's markup once, then later calls only update it, so focus and animations survive a refresh. */
-function build(el: HTMLElement, key: string, html: () => string, onClick?: (action: string) => void): void {
+export function build(el: HTMLElement, key: string, html: () => string, onClick?: (action: string) => void): void {
   if (el.dataset.view === key) return;
   el.dataset.view = key;
   el.innerHTML = html();
@@ -47,7 +49,7 @@ function build(el: HTMLElement, key: string, html: () => string, onClick?: (acti
       }
     : null;
 }
-const setText = (el: HTMLElement, selector: string, value: string) => {
+export const setText = (el: HTMLElement, selector: string, value: string) => {
   const node = el.querySelector(selector);
   if (node && node.textContent !== value) node.textContent = value;
 };
@@ -56,6 +58,12 @@ const timeOfDay = (date: Date) => date.toLocaleTimeString([], { hour: 'numeric',
 const CLOSE = `<button type="button" class="buoy-x" data-do="collapse" aria-label="Close">${I.x}</button>`;
 const head = (lead: string, title: string, trail = CLOSE) =>
   `<div class="buoy-exp-head">${lead}<div class="buoy-exp-text"><span class="buoy-exp-title">${title}</span><span class="buoy-exp-desc lv-desc"></span></div>${trail}</div>`;
+
+/** What an activity tells its owner: `change` when a control on the island changed the state, `close` when it left. */
+export interface LiveHooks {
+  change?: () => void;
+  close?: () => void;
+}
 
 type Name = 'timer' | 'music' | 'call' | 'undo' | 'offline' | 'record';
 const running = new Map<Name, LiveHandle>();
@@ -71,18 +79,22 @@ const stopped = (name: Name) => {
 
 /* ───── Focus timer ───── */
 
-function focusTimer() {
-  const total = 25 * 60;
-  const s = { left: total, running: true, ends: new Date(Date.now() + total * 1000), tick: 0 };
+export interface TimerState {
+  total: number;
+  left: number;
+  running: boolean;
+  ends: Date;
+}
+
+/** Draws a countdown from `s`. The owner ticks `s.left` down and calls `refresh()`. */
+export function timerActivity(s: TimerState, hooks: LiveHooks = {}): LiveHandle {
+  const minutes = Math.round(s.total / 60);
   const live = buoy.live({
-    label: 'Focus timer, 25 minutes',
+    label: `Focus timer, ${minutes} minute${minutes === 1 ? '' : 's'}`,
     expandable: true,
-    onClose: () => {
-      clearInterval(s.tick);
-      stopped('timer');
-    },
+    onClose: hooks.close,
     render(el, { expanded }) {
-      const done = 1 - s.left / total;
+      const done = 1 - s.left / s.total;
       if (!expanded) {
         build(el, 'c', () =>
           `<span class="buoy-row end-ring"><span class="buoy-ic" data-tone="accent">${I.timer}</span><span class="buoy-title">Focus</span>` +
@@ -93,7 +105,7 @@ function focusTimer() {
       }
       build(el, 'x', () =>
         `<div class="buoy-exp">${head(`<span class="buoy-tile" data-tone="accent">${I.timer}</span>`, 'Focus')}` +
-        `<div class="lv-readout"><span class="lv-big"></span><span class="buoy-exp-desc">of 25:00</span></div>` +
+        `<div class="lv-readout"><span class="lv-big"></span><span class="buoy-exp-desc">of ${clock(s.total)}</span></div>` +
         `<div class="buoy-bar lv-line"><i></i></div>` +
         `<div class="buoy-actions"><button type="button" class="buoy-btn is-primary" data-do="pause"></button><button type="button" class="buoy-btn" data-do="end">End</button></div></div>`,
         (action) => {
@@ -103,6 +115,7 @@ function focusTimer() {
             s.running = !s.running;
             if (s.running) s.ends = new Date(Date.now() + s.left * 1000);
             live.refresh();
+            hooks.change?.();
           }
         });
       setText(el, '.lv-desc', s.running ? `Ends at ${timeOfDay(s.ends)}` : 'Paused');
@@ -111,7 +124,20 @@ function focusTimer() {
       el.querySelector<HTMLElement>('.lv-line > i')!.style.width = `${(done * 100).toFixed(1)}%`;
     },
   });
-  s.tick = window.setInterval(() => {
+  return live;
+}
+
+function focusTimer() {
+  const total = 25 * 60;
+  const s: TimerState = { total, left: total, running: true, ends: new Date(Date.now() + total * 1000) };
+  let tick = 0;
+  const live = timerActivity(s, {
+    close: () => {
+      clearInterval(tick);
+      stopped('timer');
+    },
+  });
+  tick = window.setInterval(() => {
     if (!s.running) return;
     s.left--;
     if (s.left > 0) return live.refresh();
@@ -123,22 +149,40 @@ function focusTimer() {
 
 /* ───── Now playing ───── */
 
-const TRACKS = [
+export const TRACKS = [
   { title: 'Nightswim', artist: 'Low Tide', album: 'Lagoon Sessions', length: 220 },
   { title: 'Tidewater', artist: 'Low Tide', album: 'Lagoon Sessions', length: 198 },
   { title: 'Salt Lines', artist: 'Low Tide', album: 'Lagoon Sessions', length: 241 },
 ];
 
-function nowPlaying() {
-  const s = { i: 0, at: 0, playing: true, tick: 0 };
+export interface PlayerState {
+  /** Index into TRACKS. */
+  i: number;
+  /** Seconds into the track. */
+  at: number;
+  playing: boolean;
+}
+
+/** Moves on one second, and to the next track at the end of this one. */
+export function playSecond(s: PlayerState) {
+  s.at++;
+  if (s.at >= TRACKS[s.i].length) skipTrack(s, 1);
+}
+
+/** Next track, or the previous one. Going back a few seconds into a track restarts it instead. */
+export function skipTrack(s: PlayerState, by: 1 | -1) {
+  if (by === 1) s.i = (s.i + 1) % TRACKS.length;
+  else if (s.at <= 3) s.i = (s.i + TRACKS.length - 1) % TRACKS.length;
+  s.at = 0;
+}
+
+/** Draws a player from `s`. The owner moves `s.at` on and calls `refresh()`. */
+export function playerActivity(s: PlayerState, hooks: LiveHooks = {}): LiveHandle {
   const track = () => TRACKS[s.i];
   const live = buoy.live({
-    label: `Now playing: ${TRACKS[0].title} by ${TRACKS[0].artist}`,
+    label: `Now playing: ${track().title} by ${track().artist}`,
     expandable: true,
-    onClose: () => {
-      clearInterval(s.tick);
-      stopped('music');
-    },
+    onClose: hooks.close,
     render(el, { expanded }) {
       const t = track();
       if (!expanded) {
@@ -152,10 +196,10 @@ function nowPlaying() {
           `<button type="button" class="lv-ctl" data-do="next" aria-label="Next track">${I.next}</button></div></div>`,
           (action) => {
             if (action === 'toggle') s.playing = !s.playing;
-            if (action === 'next') s.i = (s.i + 1) % TRACKS.length;
-            if (action === 'prev') s.i = s.at > 3 ? s.i : (s.i + TRACKS.length - 1) % TRACKS.length;
-            if (action !== 'toggle') s.at = 0;
+            if (action === 'next') skipTrack(s, 1);
+            if (action === 'prev') skipTrack(s, -1);
             live.refresh();
+            hooks.change?.();
           });
         setText(el, '.lv-desc', `${t.artist} · ${t.album}`);
         setText(el, '.lv-at', clock(s.at));
@@ -173,13 +217,21 @@ function nowPlaying() {
       el.querySelectorAll('.lv-bars').forEach((b) => b.classList.toggle('is-on', s.playing));
     },
   });
-  s.tick = window.setInterval(() => {
+  return live;
+}
+
+function nowPlaying() {
+  const s: PlayerState = { i: 0, at: 0, playing: true };
+  let tick = 0;
+  const live = playerActivity(s, {
+    close: () => {
+      clearInterval(tick);
+      stopped('music');
+    },
+  });
+  tick = window.setInterval(() => {
     if (!s.playing) return;
-    s.at++;
-    if (s.at >= track().length) {
-      s.i = (s.i + 1) % TRACKS.length;
-      s.at = 0;
-    }
+    playSecond(s);
     live.refresh();
   }, 1000);
   started('music', live);
@@ -304,21 +356,33 @@ function offline() {
 
 /* ───── Recording ───── */
 
-function recording() {
-  const s = { ticks: 0, paused: false, levels: [] as number[], tick: 0, saved: false };
-  const secs = () => Math.floor(s.ticks / 5);
+export interface RecorderState {
+  /** Fifths of a second recorded so far. */
+  ticks: number;
+  paused: boolean;
+  levels: number[];
+  /** Set when Stop was pressed, as opposed to the recording being thrown away. */
+  saved: boolean;
+}
+export const recordedSeconds = (s: RecorderState) => Math.floor(s.ticks / 5);
+
+/** Records another fifth of a second, with a pretend input level. */
+export function recordTick(s: RecorderState) {
+  s.ticks++;
+  s.levels.push(Math.min(1, Math.abs(Math.sin(s.ticks * 0.7)) * 0.6 + Math.random() * 0.4));
+  if (s.levels.length > 64) s.levels.splice(0, s.levels.length - 64);
+}
+
+/** Draws a recording from `s`. The owner calls `recordTick()` and `refresh()`. */
+export function recorderActivity(s: RecorderState, hooks: LiveHooks = {}): LiveHandle {
   const live = buoy.live({
     label: 'Recording a voice memo',
     expandable: true,
-    onClose: () => {
-      clearInterval(s.tick);
-      stopped('record');
-      if (s.saved) buoy.success('Voice memo saved', { description: clock(secs()) });
-    },
+    onClose: hooks.close,
     render(el, { expanded }) {
       if (!expanded) {
         build(el, 'c', () => `<span class="buoy-row no-icon lv-rec"><span class="lv-dot is-rec" aria-hidden="true"></span>${bars(7, 'is-plain')}<span class="buoy-pct lv-time"></span></span>`);
-        setText(el, '.lv-time', clock(secs()));
+        setText(el, '.lv-time', clock(recordedSeconds(s)));
         el.querySelectorAll('.lv-dot, .lv-bars').forEach((n) => n.classList.toggle('is-on', !s.paused));
         return;
       }
@@ -332,13 +396,14 @@ function recording() {
           if (action === 'pause') {
             s.paused = !s.paused;
             live.refresh();
+            hooks.change?.();
           }
           if (action === 'stop') {
             s.saved = true;
             live.close();
           }
         });
-      setText(el, '.lv-desc', `${s.paused ? 'Paused' : 'Recording'} · ${clock(secs())}`);
+      setText(el, '.lv-desc', `${s.paused ? 'Paused' : 'Recording'} · ${clock(recordedSeconds(s))}`);
       setText(el, '[data-do="pause"]', s.paused ? 'Resume' : 'Pause');
       const wave = el.querySelectorAll<HTMLElement>('.lv-wave i');
       const recent = s.levels.slice(-wave.length);
@@ -349,11 +414,22 @@ function recording() {
       });
     },
   });
-  s.tick = window.setInterval(() => {
+  return live;
+}
+
+function recording() {
+  const s: RecorderState = { ticks: 0, paused: false, levels: [], saved: false };
+  let tick = 0;
+  const live = recorderActivity(s, {
+    close: () => {
+      clearInterval(tick);
+      stopped('record');
+      if (s.saved) buoy.success('Voice memo saved', { description: clock(recordedSeconds(s)) });
+    },
+  });
+  tick = window.setInterval(() => {
     if (s.paused) return;
-    s.ticks++;
-    s.levels.push(Math.min(1, Math.abs(Math.sin(s.ticks * 0.7)) * 0.6 + Math.random() * 0.4));
-    if (s.levels.length > 64) s.levels.splice(0, s.levels.length - 64);
+    recordTick(s);
     live.refresh();
   }, 200);
   started('record', live);

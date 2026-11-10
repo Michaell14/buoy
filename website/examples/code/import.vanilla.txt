@@ -1,0 +1,34 @@
+import { buoy } from 'buoy-ui/vanilla';
+
+const count = new Intl.NumberFormat();
+let job = null;
+
+function start(file) {
+  job = buoy.track(
+    async (task) => {
+      // 1 on the first run, 2 after a retry: pick up where
+      // the last run stopped.
+      const run = await openImport(file, {
+        resume: task.attempt > 1,
+      });
+      for await (const step of run.steps(task.signal)) {
+        await task.checkpoint();
+        task.progress(step.done, step.total);
+      }
+      // Anything thrown in here marks the task as failed and
+      // shows its message.
+    },
+    {
+      label: file.name,
+      icon: 'user',
+      // The amount line reads in rows, not bytes.
+      format: (done, total) =>
+        `${count.format(done)} of ${count.format(total)} rows`,
+      doneLabel: 'Imported just now',
+    },
+  );
+}
+
+// The handle works from your own buttons too.
+document.querySelector('#try-again').onclick = () => job.retry();
+document.querySelector('#stop').onclick = () => job.cancel();

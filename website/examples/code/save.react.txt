@@ -1,0 +1,37 @@
+import { useState } from 'react';
+import { buoy } from 'buoy-ui';
+
+export function ProfileForm({ profile }: { profile: Profile }) {
+  const [saving, setSaving] = useState(false);
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    const data = new FormData(event.target as HTMLFormElement);
+    setSaving(true);
+    try {
+      // Loading, then success or error, all on the same
+      // message.
+      await buoy.promise(saveProfile(data), {
+        id: 'save',
+        loading: 'Saving…',
+        success: 'Profile saved',
+        error: (e) => (e instanceof Error ? e.message : 'Could not save'),
+      });
+    } catch {
+      // The island has already shown what went wrong.
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form onSubmit={submit}>
+      <input
+        name="name"
+        defaultValue={profile.name}
+        aria-label="Display name"
+      />
+      <button disabled={saving}>Save changes</button>
+    </form>
+  );
+}

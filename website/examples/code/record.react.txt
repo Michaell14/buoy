@@ -1,0 +1,57 @@
+import { useEffect, useState } from 'react';
+import { buoy } from 'buoy-ui';
+
+const PILL =
+  '<span class="buoy-row no-icon"><span class="buoy-title">Recording</span>' +
+  '<span class="buoy-pct"></span></span>';
+const DETAILS =
+  '<div class="buoy-exp"><span class="buoy-exp-title">Voice memo</span>' +
+  '<div class="buoy-actions">' +
+  '<button type="button" class="buoy-btn is-primary">Stop</button></div></div>';
+
+export function RecordButton() {
+  const [recording, setRecording] = useState(false);
+
+  useEffect(() => {
+    if (!recording) return;
+    const started = Date.now();
+    const seconds = () => Math.round((Date.now() - started) / 1000);
+
+    const memo = buoy.live({
+      label: 'Recording a voice memo',
+      expandable: true,
+      // Runs however the activity ends: from this button,
+      // from the island, or on unmount.
+      onClose: () => {
+        clearInterval(tick);
+        setRecording(false);
+        buoy.success('Voice memo saved', {
+          description: `${seconds()} seconds`,
+        });
+      },
+      render(el, { expanded }) {
+        const view = expanded ? 'details' : 'pill';
+        if (el.dataset.view !== view) {
+          // Build each view once, then only update it, so
+          // focus survives a refresh.
+          el.dataset.view = view;
+          el.innerHTML = expanded ? DETAILS : PILL;
+          // The compact view sits inside a button, so
+          // controls go in the details.
+          const stop = el.querySelector('button');
+          if (stop) stop.onclick = () => memo.close();
+        }
+        const time = el.querySelector('.buoy-pct');
+        if (time) time.textContent = `${seconds()} s`;
+      },
+    });
+    const tick = setInterval(() => memo.refresh(), 1000);
+    return () => memo.close();
+  }, [recording]);
+
+  return (
+    <button onClick={() => setRecording(!recording)}>
+      {recording ? 'Stop' : 'Record'}
+    </button>
+  );
+}

@@ -1,0 +1,36 @@
+import { buoy } from 'buoy-ui/vanilla';
+
+// Any trusted <svg> string works where a built-in icon name
+// would go.
+const BAG =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"' +
+  ' stroke-width="2"><path d="M5.5 8.5h13l1 11h-15z"/>' +
+  '<path d="M9 8.5a3 3 0 0 1 6 0"/></svg>';
+
+let count = 0;
+
+document.querySelector('#add-to-cart').addEventListener('click', () => {
+  count += 1;
+  buoy('Added to cart', {
+    id: 'cart',
+    icon: BAG,
+    // One button on the pill. The message waits six seconds
+    // for it.
+    action: { label: 'View', onClick: showCart },
+  });
+});
+
+function showCart() {
+  // A description and two actions open the same message into
+  // a card.
+  buoy(`${count} in your cart`, {
+    id: 'cart',
+    description: `Canvas tote · ${formatPrice(32 * count)}`,
+    icon: BAG,
+    expanded: true,
+    actions: [
+      { label: 'Check out', primary: true, onClick: checkOut },
+      { label: 'Keep shopping' },
+    ],
+  });
+}

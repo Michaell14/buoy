@@ -2,6 +2,7 @@
 // so the island on the site is always the code on main.
 import { buoy, mount } from '../src/vanilla';
 import type { TaskContext, Theme } from '../src/vanilla';
+import { selectText, setCode } from './code';
 import { LIVE_CALLS, onLiveChange, toggleLive, type LiveName } from './live';
 
 mount({
@@ -65,36 +66,6 @@ if (island && shell) {
 }
 
 /* ───── Code ───── */
-
-const escape = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const TOKENS =
-  /(\/\/[^\n]*|&lt;!--[\s\S]*?--&gt;)|('(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*")|(&lt;\/?)([A-Za-z][\w.-]*)|\b(const|let|import|from|export|default|function|return|await|async|new)\b|([A-Za-z_$][\w$]*)(?=\()/g;
-
-function highlight(source: string): string {
-  return escape(source).replace(TOKENS, (match, comment, string, open, tag, keyword, call) => {
-    if (comment) return `<span class="t-c">${comment}</span>`;
-    if (string) return `<span class="t-s">${string}</span>`;
-    if (open) return `${open}<span class="t-g">${tag}</span>`;
-    if (keyword) return `<span class="t-k">${keyword}</span>`;
-    if (call) return `<span class="t-f">${call}</span>`;
-    return match;
-  });
-}
-const setCode = (element: HTMLElement, source: string) => {
-  element.innerHTML = highlight(source);
-};
-
-function selectText(element: HTMLElement) {
-  try {
-    const range = document.createRange();
-    range.selectNodeContents(element);
-    const selection = window.getSelection();
-    selection?.removeAllRanges();
-    selection?.addRange(range);
-  } catch {
-    // Selecting is only the fallback for a refused copy.
-  }
-}
 
 /** Copies text and says so on the island. */
 function copy(text: string, element: HTMLElement) {

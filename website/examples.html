@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Examples · Buoy</title>
+<meta name="description" content="Buoy in real components: share links, forms, checkouts, uploads, imports, players and timers, each with the code beside it.">
+<meta property="og:title" content="Buoy examples">
+<meta property="og:description" content="Buoy in real components, each with the code beside it.">
+<meta property="og:url" content="https://buoy-ui.vercel.app/examples">
+<meta property="og:site_name" content="Buoy">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://buoy-ui.vercel.app/og.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Buoy island, expanded into a card that reads Export ready, with Open and Show in folder buttons">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Buoy examples">
+<meta name="twitter:description" content="Buoy in real components, each with the code beside it.">
+<meta name="twitter:image" content="https://buoy-ui.vercel.app/og.png">
+<link rel="canonical" href="https://buoy-ui.vercel.app/examples">
+<meta name="theme-color" content="#FFFFFF">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="examples.css">
+<script defer src="examples.js"></script>
+</head>
+<body>
+<!-- page -->
+<div class="page ex-page" id="top">
+
+<header class="head ex-head">
+<a class="brand" href="./" aria-label="Buoy, home">
+<svg class="brand-mark" aria-hidden="true" width="26" height="26" viewBox="0 0 32 32"><circle class="ring" cx="16" cy="16" r="11" transform="rotate(-60 16 16)"/><rect class="pill" x="9" y="12.5" width="14" height="7" rx="3.5"/></svg>
+<span>Buoy</span>
+<span class="brand-sub" aria-hidden="true">/ examples</span>
+</a>
+<nav class="nav" aria-label="Main">
+<a href="./#usage">Docs</a>
+<a href="examples.html" aria-current="page">Examples</a>
+<a href="https://github.com/Michaell14/buoy">GitHub<svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24"><path d="M7 17L17 7"/><path d="M9 7h8v8"/></svg></a>
+</nav>
+</header>
+
+<div class="ex-body">
+
+<!-- The list of examples. main.ts fills it in from the examples themselves. -->
+<nav class="ex-rail" id="ex-rail" aria-label="Examples"></nav>
+
+<main class="ex-main">
+
+<div class="ex-intro">
+<div class="ex-intro-text">
+<p class="label" id="ex-kind">Examples</p>
+<h1 id="ex-title">Buoy in real components</h1>
+<p class="ex-blurb" id="ex-blurb">Components you already build, each wired to the island, with the code beside it.</p>
+</div>
+<div class="ex-theme">
+<span class="ex-theme-name" id="ex-theme-name">theme</span>
+<div class="seg" role="group" aria-labelledby="ex-theme-name">
+<button type="button" data-theme-name="ink" aria-pressed="true">Ink</button>
+<button type="button" data-theme-name="frost" aria-pressed="false">Frost</button>
+<button type="button" data-theme-name="paper" aria-pressed="false">Paper</button>
+<button type="button" data-theme-name="notch" aria-pressed="false">Notch</button>
+</div>
+</div>
+</div>
+
+<div class="ex-split">
+
+<!-- The island is mounted inside the stage, so each example answers right above its component. -->
+<section class="ex-stage" id="ex-stage" aria-label="Live example">
+<div class="ex-slot" id="ex-slot"></div>
+<p class="ex-hint" id="ex-hint"></p>
+</section>
+
+<div class="code ex-code">
+<div class="code-bar">
+<div class="tabs" role="tablist" aria-label="Code">
+<button type="button" role="tab" id="ex-tab-react" aria-selected="true" aria-controls="ex-code-panel" data-lang="react">React</button>
+<button type="button" role="tab" id="ex-tab-vanilla" aria-selected="false" aria-controls="ex-code-panel" data-lang="vanilla" tabindex="-1">Vanilla</button>
+</div>
+<button type="button" class="code-copy" id="ex-copy">Copy</button>
+</div>
+<pre class="code-body" id="ex-code-panel" role="tabpanel" aria-labelledby="ex-tab-react" tabindex="0"><code id="ex-code"></code></pre>
+</div>
+
+</div>
+
+<section class="details" id="ex-notes" aria-label="What to notice"></section>
+
+</main>
+</div>
+
+<footer class="foot">
+<span class="foot-version">buoy-ui · v{{version}}</span>
+<span>MIT · <a href="https://github.com/Michaell14/buoy">GitHub</a></span>
+</footer>
+
+</div>
+<!-- /page -->
+</body>
+</html>

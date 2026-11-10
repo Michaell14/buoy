@@ -1,0 +1,32 @@
+import { useState } from 'react';
+import { buoy } from 'buoy-ui';
+
+export function InviteForm({ members }: { members: string[] }) {
+  const [email, setEmail] = useState('');
+
+  function submit(event: React.FormEvent) {
+    event.preventDefault();
+    // One id, so each result replaces the last one in place.
+    if (!email.includes('@')) {
+      buoy.warn('Enter a valid email address', { id: 'invite' });
+    } else if (members.includes(email)) {
+      buoy.info(`${email} is already on the team`, { id: 'invite' });
+    } else {
+      sendInvite(email);
+      buoy.success(`Invite sent to ${email}`, { id: 'invite' });
+      setEmail('');
+    }
+  }
+
+  return (
+    <form onSubmit={submit} noValidate>
+      <input
+        type="email"
+        value={email}
+        onChange={(event) => setEmail(event.target.value)}
+        aria-label="Email"
+      />
+      <button>Send invite</button>
+    </form>
+  );
+}

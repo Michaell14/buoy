@@ -1,0 +1,23 @@
+import { buoy } from 'buoy-ui/vanilla';
+
+const form = document.querySelector('#profile');
+const button = form.querySelector('button');
+
+form.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  button.disabled = true;
+  try {
+    // Loading, then success or error, all on the same
+    // message.
+    await buoy.promise(saveProfile(new FormData(form)), {
+      id: 'save',
+      loading: 'Saving…',
+      success: 'Profile saved',
+      error: (e) => (e instanceof Error ? e.message : 'Could not save'),
+    });
+  } catch {
+    // The island has already shown what went wrong.
+  } finally {
+    button.disabled = false;
+  }
+});

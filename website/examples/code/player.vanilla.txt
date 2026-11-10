@@ -1,0 +1,41 @@
+import { buoy } from 'buoy-ui/vanilla';
+
+const PILL =
+  '<span class="buoy-row no-icon"><span class="buoy-title"></span></span>';
+const DETAILS =
+  '<div class="buoy-exp"><span class="buoy-exp-title"></span>' +
+  '<div class="buoy-actions">' +
+  '<button type="button" class="buoy-btn is-primary"></button></div></div>';
+
+const audio = document.querySelector('audio');
+let live = null;
+
+audio.addEventListener('play', () => {
+  // Already on the island: draw again in place. Nothing moves
+  // or is announced.
+  if (live) return live.refresh();
+  live = buoy.live({
+    label: `Now playing: ${audio.title}`,
+    expandable: true, // a tap opens the details
+    onClose: () => (live = null),
+    render(el, { expanded }) {
+      const view = expanded ? 'details' : 'pill';
+      if (el.dataset.view !== view) {
+        // Build each view once, then only update it, so focus
+        // survives a refresh.
+        el.dataset.view = view;
+        el.innerHTML = expanded ? DETAILS : PILL;
+      }
+      const title = el.querySelector('.buoy-title, .buoy-exp-title');
+      title.textContent = audio.title;
+      if (!expanded) return;
+      const button = el.querySelector('button');
+      button.textContent = audio.paused ? 'Play' : 'Pause';
+      button.onclick = () =>
+        audio.paused ? audio.play() : audio.pause();
+    },
+  });
+});
+
+audio.addEventListener('pause', () => live?.refresh());
+audio.addEventListener('ended', () => live?.close());

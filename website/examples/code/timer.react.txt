@@ -1,0 +1,53 @@
+import { useEffect, useRef, useState } from 'react';
+import { buoy, type LiveHandle } from 'buoy-ui';
+
+const PILL =
+  '<span class="buoy-row no-icon"><span class="buoy-title">Focus</span>' +
+  '<span class="buoy-pct"></span></span>';
+const clock = (s: number) =>
+  `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
+export function FocusTimer({ minutes = 25 }) {
+  const [left, setLeft] = useState(minutes * 60);
+  const [running, setRunning] = useState(false);
+  const live = useRef(null as LiveHandle | null);
+  // render() runs later, so it reads the newest time through
+  // a ref.
+  const latest = useRef(left);
+  latest.current = left;
+
+  // The activity is on the island for as long as the timer
+  // runs.
+  useEffect(() => {
+    if (!running) return;
+    const timer = buoy.live({
+      label: `Focus timer, ${minutes} minutes`,
+      render(el) {
+        el.innerHTML = PILL;
+        const time = el.querySelector('.buoy-pct')!;
+        time.textContent = clock(latest.current);
+      },
+    });
+    live.current = timer;
+    const tick = setInterval(() => setLeft((s) => s - 1), 1000);
+    return () => {
+      clearInterval(tick);
+      timer.close();
+    };
+  }, [running, minutes]);
+
+  // Every second: draw again in place, or finish with an
+  // ordinary message.
+  useEffect(() => {
+    if (left > 0) return live.current?.refresh();
+    setRunning(false);
+    setLeft(minutes * 60);
+    buoy.success('Focus session done');
+  }, [left, minutes]);
+
+  return (
+    <button onClick={() => setRunning(!running)}>
+      {running ? 'Pause' : 'Start'} · {clock(left)}
+    </button>
+  );
+}

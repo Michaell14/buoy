@@ -1,0 +1,46 @@
+import { useRef, useState } from 'react';
+import { buoy } from 'buoy-ui';
+
+export function Inbox({ threads }: { threads: Thread[] }) {
+  const [archived, setArchived] = useState([] as string[]);
+  // Everything archived while the message is up, so one Undo
+  // brings it all back.
+  const batch = useRef([] as string[]);
+
+  function archive(id: string) {
+    const ids = (batch.current = [...batch.current, id]);
+    setArchived((all) => [...all, id]);
+    const title =
+      ids.length === 1
+        ? 'Conversation archived'
+        : `${ids.length} conversations archived`;
+    buoy(title, {
+      // The same id folds each archive into one message and
+      // restarts its six seconds.
+      id: 'archive',
+      action: {
+        label: 'Undo',
+        onClick: () =>
+          setArchived((all) => all.filter((x) => !ids.includes(x))),
+      },
+      // Runs when the message leaves: the next archive starts
+      // a new batch.
+      onDismiss: () => {
+        batch.current = [];
+      },
+    });
+  }
+
+  return (
+    <ul>
+      {threads
+        .filter((thread) => !archived.includes(thread.id))
+        .map((thread) => (
+          <li key={thread.id}>
+            {thread.from}
+            <button onClick={() => archive(thread.id)}>Archive</button>
+          </li>
+        ))}
+    </ul>
+  );
+}

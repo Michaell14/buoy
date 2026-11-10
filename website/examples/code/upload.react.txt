@@ -1,0 +1,54 @@
+import { buoy, useBuoyTasks, type TaskContext } from 'buoy-ui';
+
+// Once, at the root: <Buoy labels={{ noun: 'upload' }} />
+
+export function Uploader() {
+  // Every tracked task, kept up to date. The island reads the
+  // same list.
+  const tasks = useBuoyTasks();
+
+  function add(files: File[]) {
+    for (const file of files) {
+      buoy.track((task) => send(file, task), {
+        label: file.name,
+        total: file.size,
+        icon: file.type.startsWith('image/') ? 'image' : 'file',
+        doneLabel: 'Uploaded just now',
+      });
+    }
+  }
+
+  return (
+    <div>
+      <input
+        type="file"
+        multiple
+        onChange={(event) => add([...(event.target.files ?? [])])}
+      />
+      <ul>
+        {tasks.map((task) => (
+          <li key={task.id}>
+            {task.label}
+            <progress value={task.progress} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// Sends the file in chunks, so it can pause between them.
+async function send(file: File, task: TaskContext) {
+  const chunk = 1024 * 1024;
+  for (let start = 0; start < file.size; start += chunk) {
+    await task.checkpoint(); // waits here while the task is paused
+    const end = Math.min(start + chunk, file.size);
+    await fetch(`/uploads/${encodeURIComponent(file.name)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Range': `bytes ${start}-${end - 1}/${file.size}` },
+      body: file.slice(start, end),
+      signal: task.signal, // aborted when the task is canceled
+    });
+    task.progress(end, file.size);
+  }
+}

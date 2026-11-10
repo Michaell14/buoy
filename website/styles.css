@@ -606,8 +606,14 @@ p { text-wrap: pretty; }
 @media (max-width: 640px) {
   .head { grid-template-columns: 1fr auto; row-gap: 0; }
   .head-gap { grid-column: 1 / -1; grid-row: 1; justify-self: center; height: 46px; }
+  .nav a { padding: 0 9px; }
   .hero { padding-top: 40px; }
   .wordmark { font-size: 39vw; }
   .column { padding-top: 72px; gap: 80px; }
   .code-body { padding: 18px 18px 20px; font-size: 13px; }
+}
+/* The narrowest phones: the three nav links still fit beside the wordmark. */
+@media (max-width: 350px) {
+  .nav a { padding: 0 6px; }
+  .nav svg { display: none; }
 }
