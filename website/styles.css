@@ -162,14 +162,13 @@ p { text-wrap: pretty; }
   align-items: center;
   text-align: center;
 }
-/* The rule sits on the baseline, and the tail of the y hangs through it into the reserved space below. */
+/* The box ends at the baseline, and the tail of the y hangs into the reserved space below. */
 .wordmark {
   margin-top: 20px;
   margin-bottom: 0.16em;
   align-self: stretch;
   font-size: clamp(96px, 27vw, 400px);
   height: 0.795em;
-  border-bottom: 1px solid var(--line);
 }
 /* The right margin centres the letters' outline (from the stem of the B to the arm of the y), not their advance widths. */
 .wordmark h1 { margin: -0.06em 0.124em 0 0; font-size: 1em; line-height: 1; font-weight: 700; letter-spacing: -0.075em; }
