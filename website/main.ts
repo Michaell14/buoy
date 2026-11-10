@@ -22,6 +22,48 @@ mount({
 const $ = <T extends HTMLElement = HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
 const $$ = <T extends HTMLElement = HTMLElement>(selector: string) => Array.from(document.querySelectorAll<T>(selector));
 
+/* ───── Ripples ───── */
+
+// Sends a ripple out through the rings behind the hero whenever the island shows something new:
+// a fresh view (the island adds a new .buoy-layer for each), or a new title in the same one, as when
+// the welcome hands over to the install command. Progress and live activity ticks don't count.
+const ripples = $('.ripples');
+const stillMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+let ripplesInView = true;
+let lastRipple = -Infinity;
+new IntersectionObserver(([entry]) => {
+  ripplesInView = entry.isIntersecting;
+}).observe(ripples);
+
+function ripple() {
+  const now = performance.now();
+  if (stillMotion.matches || !ripplesInView || now - lastRipple < 500) return;
+  lastRipple = now;
+  const ring = document.createElement('b');
+  ring.addEventListener('animationend', () => ring.remove());
+  ripples.append(ring);
+}
+
+const island = document.querySelector<HTMLElement>('.buoy');
+const shell = island?.querySelector('.buoy-shell');
+if (island && shell) {
+  const layerIds = new WeakMap<Element, number>();
+  let layerCount = 0;
+  let shown = '';
+  const showing = () => {
+    const layer = shell.lastElementChild;
+    if (!layer || !layer.classList.contains('buoy-layer')) return '';
+    if (!layerIds.has(layer)) layerIds.set(layer, ++layerCount);
+    const title = island.dataset.type === 'live' ? '' : (layer.querySelector('.buoy-title')?.textContent ?? '');
+    return `${layerIds.get(layer)}|${title}`;
+  };
+  new MutationObserver(() => {
+    const next = showing();
+    if (next && next !== shown) ripple();
+    shown = next;
+  }).observe(shell, { childList: true, subtree: true, characterData: true });
+}
+
 /* ───── Code ───── */
 
 const escape = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

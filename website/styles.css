@@ -72,9 +72,42 @@ h1, h2, h3 { text-wrap: balance; }
 p { text-wrap: pretty; }
 
 .page {
+  position: relative;
   padding-left: max(20px, env(safe-area-inset-left, 0px));
   padding-right: max(20px, env(safe-area-inset-right, 0px));
   padding-block: 0 48px;
+}
+
+/* ───── Ripples ─────
+   Faint rings spread from the island at the top of the page, behind the hero.
+   A teal ripple runs out through them whenever the island changes what it shows (main.ts). */
+.ripples {
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 860px;
+  overflow: hidden;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(#000 55%, transparent);
+  mask-image: linear-gradient(#000 55%, transparent);
+}
+/* Centred on the island: 16px from the top, plus half its 40px height. */
+.ripples i, .ripples b { position: absolute; left: 50%; top: 36px; border-radius: 50%; transform: translate(-50%, -50%); }
+.ripples i { border: 1px solid color-mix(in srgb, var(--accent-ink) 13%, transparent); }
+.ripples i:nth-child(1) { width: 190px; height: 190px; border-color: color-mix(in srgb, var(--accent-ink) 20%, transparent); }
+.ripples i:nth-child(2) { width: 420px; height: 420px; border-color: color-mix(in srgb, var(--accent-ink) 16%, transparent); }
+.ripples i:nth-child(3) { width: 700px; height: 700px; }
+.ripples i:nth-child(4) { width: 1030px; height: 1030px; border-color: color-mix(in srgb, var(--accent-ink) 11%, transparent); }
+.ripples i:nth-child(5) { width: 1420px; height: 1420px; border-color: color-mix(in srgb, var(--accent-ink) 9%, transparent); }
+.ripples i:nth-child(6) { width: 1860px; height: 1860px; border-color: color-mix(in srgb, var(--accent-ink) 7%, transparent); }
+/* It grows by size rather than scale, so its line stays crisp. */
+.ripples b { width: 110px; height: 110px; border: 1.5px solid var(--accent); opacity: 0; animation: ripple 3.2s cubic-bezier(0.2, 0.6, 0.3, 1) forwards; }
+@keyframes ripple {
+  0% { width: 110px; height: 110px; opacity: 0.9; }
+  70% { opacity: 0.25; }
+  100% { width: 1860px; height: 1860px; opacity: 0; }
 }
 
 /* ───── Header ───── */
