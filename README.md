@@ -112,7 +112,7 @@ buoy.promise(save(), {
 });
 ```
 
-It returns the promise you passed, so you can still `await` it.
+It returns the promise you passed, so you can still `await` it. Pass `id` to show the promise in an existing message, or to give its message an id. If a newer message takes that id before the promise settles, the result is dropped.
 
 ## Background tasks
 

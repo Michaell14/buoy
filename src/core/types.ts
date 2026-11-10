@@ -46,6 +46,11 @@ export interface MessageOptions {
 }
 
 export interface PromiseOptions<T> {
+  /**
+   * Shows the promise in the message with this id, or gives its message this id. If a newer message
+   * takes that id over before the promise settles, the result is dropped rather than replacing it.
+   */
+  id?: string;
   loading?: string;
   success?: string | ((value: T) => string);
   error?: string | ((error: unknown) => string);

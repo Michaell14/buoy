@@ -373,7 +373,11 @@ export function createStore() {
     emit();
   }
   function promise<T>(input: Promise<T> | (() => Promise<T>), o: PromiseOptions<T> = {}): Promise<T> {
-    const id = push(o.loading ?? 'Loading…', { type: 'loading', duration: Infinity, persist: false });
+    const id = push(o.loading ?? 'Loading…', { id: o.id, type: 'loading', duration: Infinity, persist: false });
+    // The result goes to this exact message. If another message with the same id has taken it over by
+    // then, the result is stale and is dropped; if the message was dismissed, the result shows on its own.
+    const mine = find(id);
+    const rev = mine ? mine.rev : -1;
     let p: Promise<T>;
     try {
       p = Promise.resolve(typeof input === 'function' ? input() : input);
@@ -382,8 +386,8 @@ export function createStore() {
     }
     const settle = (title: string, opts: NewMessage) => {
       const m = find(id);
-      if (m) update(m, title, opts);
-      else push(title, opts);
+      if (!m) push(title, opts);
+      else if (m === mine && m.rev === rev) update(m, title, opts);
     };
     p.then(
       (value) => settle(typeof o.success === 'function' ? o.success(value) : o.success ?? 'Done', { type: 'success', duration: o.successDuration ?? SUCCESS_MS }),
