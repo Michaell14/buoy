@@ -362,8 +362,6 @@ function recording() {
 /* ───── Wiring ───── */
 
 const START: Record<Name, () => void> = { timer: focusTimer, music: nowPlaying, call, undo, offline, record: recording };
-/** Demos that keep going until you stop them; pressing their button again ends them. */
-const TOGGLES = new Set<Name>(['timer', 'music', 'call', 'record']);
 
 export const LIVE_CALLS: Record<Name, string> = {
   timer: "const timer = buoy.live({ label: 'Focus timer', expandable: true, render });\nsetInterval(() => timer.refresh(), 1000);",
@@ -375,14 +373,13 @@ export const LIVE_CALLS: Record<Name, string> = {
 };
 
 /**
- * Starts a demo, or stops it if it is one that keeps going and is already running.
- * One demo runs at a time: starting one ends the others first. `clear` runs just before it starts.
+ * Starts a demo, or stops it if it is already running. One demo runs at a time, so its button
+ * is the only one pressed: starting one ends the others first. `clear` runs just before it starts.
  */
 export function toggleLive(name: Name, clear: () => void = () => {}): void {
   const live = running.get(name);
-  if (live && TOGGLES.has(name)) return live.close();
-  for (const [other, handle] of running) if (other !== name) handle.close();
-  if (live) live.close();
+  if (live) return live.close();
+  for (const handle of running.values()) handle.close();
   clear();
   START[name]();
 }

@@ -131,6 +131,28 @@ describe('messages', () => {
     expect(s.state.queue).toHaveLength(0);
   });
 
+  it('calls onDismiss for a message that was waiting in the queue', () => {
+    const s = attached();
+    const onDismiss = vi.fn();
+    const id = s.push('Now playing', { persist: true, onDismiss });
+    s.push('Link copied');
+    expect(s.state.queue.map((m) => m.title)).toEqual(['Now playing']);
+    s.dismiss(id);
+    expect(onDismiss).toHaveBeenCalledOnce();
+    expect(s.state.queue).toHaveLength(0);
+  });
+
+  it('calls onDismiss for every message when clearing everything', () => {
+    const s = attached();
+    const first = vi.fn();
+    const second = vi.fn();
+    s.push('Now playing', { persist: true, onDismiss: first });
+    s.push('Link copied', { onDismiss: second });
+    s.dismiss();
+    expect(first).toHaveBeenCalledOnce();
+    expect(second).toHaveBeenCalledOnce();
+  });
+
   it('calls onDismiss', () => {
     const s = attached();
     const onDismiss = vi.fn();
