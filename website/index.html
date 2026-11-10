@@ -85,6 +85,32 @@ setInterval(() =&gt; timer.refresh(), 1000);</code></pre>
 <p class="note">Things that keep going stay on the island until you stop them. While a timer, song, call or recording runs, tap the island to open its controls.</p>
 </section>
 
+<section class="block" aria-labelledby="themes-h">
+<div class="block-head">
+<h2 id="themes-h">Four themes</h2>
+<p>One prop changes the surface. Pick one to see it on the island.</p>
+</div>
+<div class="themes">
+<button type="button" class="theme" data-theme-name="ink" aria-pressed="true">
+<span class="theme-stage"><span class="theme-pill is-ink"></span></span>
+<span class="theme-name">Ink <span class="theme-note">default</span></span>
+</button>
+<button type="button" class="theme" data-theme-name="frost" aria-pressed="false">
+<span class="theme-stage"><span class="frost-bg" aria-hidden="true"><i></i><i></i><i></i></span><span class="theme-pill is-frost"></span></span>
+<span class="theme-name">Frost</span>
+</button>
+<button type="button" class="theme" data-theme-name="paper" aria-pressed="false">
+<span class="theme-stage"><span class="theme-pill is-paper"></span></span>
+<span class="theme-name">Paper</span>
+</button>
+<button type="button" class="theme" data-theme-name="notch" aria-pressed="false">
+<span class="theme-stage is-notch"><span class="notch"></span></span>
+<span class="theme-name">Notch</span>
+</button>
+</div>
+<pre class="call" tabindex="0"><code id="theme-call">&lt;Buoy theme="ink" /&gt;</code></pre>
+</section>
+
 <section class="block" aria-labelledby="states-h">
 <div class="block-head">
 <h2 id="states-h">One shape, every state</h2>
@@ -146,32 +172,6 @@ export default function App() {
 buoy('Link copied', { icon: 'link' });</code></pre>
 </div>
 <p class="more">Messages, promises, tasks and every option are covered in the <a href="https://github.com/Michaell14/buoy#readme">README</a>.</p>
-</section>
-
-<section class="block" aria-labelledby="themes-h">
-<div class="block-head">
-<h2 id="themes-h">Four themes</h2>
-<p>One prop changes the surface. Pick one to see it on the island.</p>
-</div>
-<div class="themes">
-<button type="button" class="theme" data-theme-name="ink" aria-pressed="true">
-<span class="theme-stage"><span class="theme-pill is-ink"></span></span>
-<span class="theme-name">Ink <span class="theme-note">default</span></span>
-</button>
-<button type="button" class="theme" data-theme-name="frost" aria-pressed="false">
-<span class="theme-stage"><span class="frost-bg" aria-hidden="true"><i></i><i></i><i></i></span><span class="theme-pill is-frost"></span></span>
-<span class="theme-name">Frost</span>
-</button>
-<button type="button" class="theme" data-theme-name="paper" aria-pressed="false">
-<span class="theme-stage"><span class="theme-pill is-paper"></span></span>
-<span class="theme-name">Paper</span>
-</button>
-<button type="button" class="theme" data-theme-name="notch" aria-pressed="false">
-<span class="theme-stage is-notch"><span class="notch"></span></span>
-<span class="theme-name">Notch</span>
-</button>
-</div>
-<pre class="call" tabindex="0"><code id="theme-call">&lt;Buoy theme="ink" /&gt;</code></pre>
 </section>
 
 <section class="details" aria-label="Details">
