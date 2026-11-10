@@ -472,11 +472,12 @@ p { text-wrap: pretty; }
 .chip[aria-pressed="true"] { border-color: var(--accent-ink); background: var(--accent-ink); color: var(--paper); }
 
 .buoy .lv-media { padding-right: 16px; }
+/* Round in the compact island, like its icons, so it keeps the same 6px from the rounded end all the way around. */
 .buoy .lv-art {
   width: 32px;
   height: 32px;
   flex: none;
-  border-radius: 10px;
+  border-radius: 999px;
   background: var(--art-0);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }

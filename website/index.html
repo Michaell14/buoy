@@ -95,8 +95,8 @@
 <button type="button" class="chip" data-live="timer" aria-pressed="false">Focus timer</button>
 <button type="button" class="chip" data-live="music" aria-pressed="false">Now playing</button>
 <button type="button" class="chip" data-live="call" aria-pressed="false">Call</button>
-<button type="button" class="chip" data-live="undo">Undo</button>
-<button type="button" class="chip" data-live="offline">Offline</button>
+<button type="button" class="chip" data-live="undo" aria-pressed="false">Undo</button>
+<button type="button" class="chip" data-live="offline" aria-pressed="false">Offline</button>
 <button type="button" class="chip" data-live="record" aria-pressed="false">Recording</button>
 </div>
 <pre class="call" tabindex="0"><code id="live-call">const timer = buoy.live({ label: 'Focus timer', expandable: true, render });
@@ -128,6 +128,35 @@ setInterval(() =&gt; timer.refresh(), 1000);</code></pre>
 </button>
 </div>
 <pre class="call" tabindex="0"><code id="theme-call">&lt;Buoy theme="ink" /&gt;</code></pre>
+</section>
+
+<section class="block" id="usage" aria-labelledby="usage-h">
+<div class="block-head">
+<h2 id="usage-h">Two lines to start</h2>
+<p>Render the island once. Call it from anywhere, even outside React.</p>
+</div>
+<div class="code">
+<div class="code-bar">
+<div class="tabs" role="tablist" aria-label="Setup">
+<button type="button" role="tab" id="tab-react" aria-selected="true" aria-controls="usage-panel" data-tab="react">React</button>
+<button type="button" role="tab" id="tab-next" aria-selected="false" aria-controls="usage-panel" data-tab="next" tabindex="-1">Next.js</button>
+<button type="button" role="tab" id="tab-vue" aria-selected="false" aria-controls="usage-panel" data-tab="vue" tabindex="-1">Vue</button>
+<button type="button" role="tab" id="tab-svelte" aria-selected="false" aria-controls="usage-panel" data-tab="svelte" tabindex="-1">Svelte</button>
+<button type="button" role="tab" id="tab-solid" aria-selected="false" aria-controls="usage-panel" data-tab="solid" tabindex="-1">Solid</button>
+<button type="button" role="tab" id="tab-vanilla" aria-selected="false" aria-controls="usage-panel" data-tab="vanilla" tabindex="-1">Vanilla</button>
+<button type="button" role="tab" id="tab-script" aria-selected="false" aria-controls="usage-panel" data-tab="script" tabindex="-1">Script tag</button>
+</div>
+<button type="button" class="code-copy" id="usage-copy">Copy</button>
+</div>
+<pre class="code-body" id="usage-panel" role="tabpanel" aria-labelledby="tab-react" tabindex="0"><code id="usage-code">import { Buoy, buoy } from 'buoy-ui';
+
+export default function App() {
+  return &lt;Buoy /&gt;;
+}
+
+buoy('Link copied', { icon: 'link' });</code></pre>
+</div>
+<p class="more">Messages, promises, tasks and every option are covered in the <a href="https://github.com/Michaell14/buoy#readme">README</a>.</p>
 </section>
 
 <section class="block" aria-labelledby="states-h">
@@ -162,35 +191,6 @@ setInterval(() =&gt; timer.refresh(), 1000);</code></pre>
 <figcaption>two at once</figcaption>
 </figure>
 </div>
-</section>
-
-<section class="block" id="usage" aria-labelledby="usage-h">
-<div class="block-head">
-<h2 id="usage-h">Two lines to start</h2>
-<p>Render the island once. Call it from anywhere, even outside React.</p>
-</div>
-<div class="code">
-<div class="code-bar">
-<div class="tabs" role="tablist" aria-label="Setup">
-<button type="button" role="tab" id="tab-react" aria-selected="true" aria-controls="usage-panel" data-tab="react">React</button>
-<button type="button" role="tab" id="tab-next" aria-selected="false" aria-controls="usage-panel" data-tab="next" tabindex="-1">Next.js</button>
-<button type="button" role="tab" id="tab-vue" aria-selected="false" aria-controls="usage-panel" data-tab="vue" tabindex="-1">Vue</button>
-<button type="button" role="tab" id="tab-svelte" aria-selected="false" aria-controls="usage-panel" data-tab="svelte" tabindex="-1">Svelte</button>
-<button type="button" role="tab" id="tab-solid" aria-selected="false" aria-controls="usage-panel" data-tab="solid" tabindex="-1">Solid</button>
-<button type="button" role="tab" id="tab-vanilla" aria-selected="false" aria-controls="usage-panel" data-tab="vanilla" tabindex="-1">Vanilla</button>
-<button type="button" role="tab" id="tab-script" aria-selected="false" aria-controls="usage-panel" data-tab="script" tabindex="-1">Script tag</button>
-</div>
-<button type="button" class="code-copy" id="usage-copy">Copy</button>
-</div>
-<pre class="code-body" id="usage-panel" role="tabpanel" aria-labelledby="tab-react" tabindex="0"><code id="usage-code">import { Buoy, buoy } from 'buoy-ui';
-
-export default function App() {
-  return &lt;Buoy /&gt;;
-}
-
-buoy('Link copied', { icon: 'link' });</code></pre>
-</div>
-<p class="more">Messages, promises, tasks and every option are covered in the <a href="https://github.com/Michaell14/buoy#readme">README</a>.</p>
 </section>
 
 <section class="details" aria-label="Details">
