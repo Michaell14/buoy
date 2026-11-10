@@ -1,0 +1,33 @@
+import { buoy, mount } from 'buoy-ui/vanilla';
+
+// Wording for the island while files upload.
+mount({ labels: { noun: 'upload' } });
+
+const input = document.querySelector('#files');
+
+input.addEventListener('change', () => {
+  for (const file of input.files) {
+    buoy.track((task) => send(file, task), {
+      label: file.name,
+      total: file.size,
+      icon: file.type.startsWith('image/') ? 'image' : 'file',
+      doneLabel: 'Uploaded just now',
+    });
+  }
+});
+
+// Sends the file in chunks, so it can pause between them.
+async function send(file, task) {
+  const chunk = 1024 * 1024;
+  for (let start = 0; start < file.size; start += chunk) {
+    await task.checkpoint(); // waits here while the task is paused
+    const end = Math.min(start + chunk, file.size);
+    await fetch(`/uploads/${encodeURIComponent(file.name)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Range': `bytes ${start}-${end - 1}/${file.size}` },
+      body: file.slice(start, end),
+      signal: task.signal, // aborted when the task is canceled
+    });
+    task.progress(end, file.size);
+  }
+}

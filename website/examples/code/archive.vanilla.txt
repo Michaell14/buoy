@@ -1,0 +1,33 @@
+import { buoy } from 'buoy-ui/vanilla';
+
+// Everything archived while the message is up, so one Undo
+// brings it all back.
+let batch = [];
+
+function archive(row) {
+  const rows = (batch = [...batch, row]);
+  row.hidden = true;
+  const title =
+    rows.length === 1
+      ? 'Conversation archived'
+      : `${rows.length} conversations archived`;
+  buoy(title, {
+    // The same id folds each archive into one message and
+    // restarts its six seconds.
+    id: 'archive',
+    action: {
+      label: 'Undo',
+      onClick: () => rows.forEach((r) => (r.hidden = false)),
+    },
+    // Runs when the message leaves: the next archive starts a
+    // new batch.
+    onDismiss: () => {
+      batch = [];
+    },
+  });
+}
+
+document.querySelector('#inbox').addEventListener('click', (event) => {
+  const button = event.target.closest('[data-archive]');
+  if (button) archive(button.closest('li'));
+});

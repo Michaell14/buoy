@@ -4,7 +4,7 @@
 
 A morphing island for notifications, promises and background tasks.
 
-**Try it live at [buoy-ui.vercel.app](https://buoy-ui.vercel.app).**
+**Try it live at [buoy-ui.vercel.app](https://buoy-ui.vercel.app).** The [examples](https://buoy-ui.vercel.app/examples) show it in real components, such as a share button, a checkout, an uploader and a player, each with its code.
 
 Messages, loading states and upload progress share one surface at the top of the screen. It queues, it splits in two when a message arrives during an upload, and it opens into a tray when you need the details. Works with React, or with no framework at all.
 

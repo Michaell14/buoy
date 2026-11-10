@@ -9,7 +9,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const out = join(here, 'dist');
 const serve = process.argv.includes('--serve');
 const { version } = JSON.parse(await readFile(join(here, '..', 'package.json'), 'utf8'));
-const STATIC = ['index.html', 'styles.css', 'favicon.svg', 'registry/buoy.tsx', 'og/og.png', 'og/og.mp4'];
+const PAGES = ['index.html', 'examples.html'];
+const STATIC = [...PAGES, 'styles.css', 'examples.css', 'favicon.svg', 'registry/buoy.tsx', 'og/og.png', 'og/og.mp4'];
 
 // A shadcn registry item, so `npx shadcn add https://buoy-ui.vercel.app/r/buoy.json` installs
 // buoy-ui with the project's package manager and adds components/ui/buoy.tsx.
@@ -29,9 +30,12 @@ async function writeRegistry() {
 }
 
 async function copyStatic() {
-  const html = await readFile(join(here, 'index.html'), 'utf8');
-  await writeFile(join(out, 'index.html'), html.replaceAll('{{version}}', version));
+  for (const page of PAGES) {
+    const html = await readFile(join(here, page), 'utf8');
+    await writeFile(join(out, page), html.replaceAll('{{version}}', version));
+  }
   await copyFile(join(here, 'styles.css'), join(out, 'styles.css'));
+  await copyFile(join(here, 'examples.css'), join(out, 'examples.css'));
   await copyFile(join(here, 'favicon.svg'), join(out, 'favicon.svg'));
   // The link preview: a still for og:image and a short loop for og:video, recorded by og/render.mjs.
   await copyFile(join(here, 'og', 'og.png'), join(out, 'og.png'));
@@ -44,8 +48,9 @@ await mkdir(out, { recursive: true });
 await copyStatic();
 
 const options = {
-  entryPoints: [join(here, 'main.ts')],
-  outfile: join(out, 'main.js'),
+  // One script per page: main.js for the homepage, examples.js for the examples.
+  entryPoints: { main: join(here, 'main.ts'), examples: join(here, 'examples', 'main.ts') },
+  outdir: out,
   bundle: true,
   format: 'iife',
   target: 'es2020',

@@ -1,0 +1,30 @@
+import { useState } from 'react';
+import { buoy } from 'buoy-ui';
+
+export function PayButton({ order }: { order: Order }) {
+  const [paid, setPaid] = useState(false);
+
+  function pay() {
+    buoy
+      .promise(charge(order), {
+        id: 'checkout',
+        loading: 'Processing payment…',
+        success: 'Payment received',
+        // Show the reason the server gave.
+        error: (e) => (e instanceof Error ? e.message : 'Payment failed'),
+        // Adds a Retry button to the error, which stays until
+        // it is dismissed.
+        retry: pay,
+      })
+      .then(
+        () => setPaid(true),
+        () => {},
+      );
+  }
+
+  return (
+    <button onClick={pay} disabled={paid}>
+      {paid ? 'Paid' : `Pay ${order.total}`}
+    </button>
+  );
+}

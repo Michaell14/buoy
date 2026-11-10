@@ -1,0 +1,15 @@
+import { buoy } from 'buoy-ui/vanilla';
+
+const link = document.querySelector('#share-link');
+const button = document.querySelector('#copy-link');
+
+button.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(link.value);
+    // The id keeps this to one message, however often the
+    // button is pressed.
+    buoy('Link copied', { id: 'share', icon: 'link' });
+  } catch {
+    buoy.warn("Couldn't copy the link", { id: 'share' });
+  }
+});

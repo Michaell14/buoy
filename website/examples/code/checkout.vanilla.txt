@@ -1,0 +1,24 @@
+import { buoy } from 'buoy-ui/vanilla';
+
+const button = document.querySelector('#pay');
+
+function pay() {
+  button.disabled = true;
+  buoy
+    .promise(charge(order), {
+      id: 'checkout',
+      loading: 'Processing payment…',
+      success: 'Payment received',
+      // Show the reason the server gave.
+      error: (e) => (e instanceof Error ? e.message : 'Payment failed'),
+      // Adds a Retry button to the error, which stays until
+      // it is dismissed.
+      retry: pay,
+    })
+    .then(
+      () => (button.textContent = 'Paid'),
+      () => (button.disabled = false),
+    );
+}
+
+button.addEventListener('click', pay);
