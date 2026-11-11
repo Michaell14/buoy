@@ -1,6 +1,6 @@
 {
   "name": "buoy-ui",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "A morphing island for notifications, promises and background tasks. For React, or no framework at all.",
   "license": "MIT",
   "type": "module",
