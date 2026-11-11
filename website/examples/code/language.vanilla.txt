@@ -1,0 +1,87 @@
+import { buoy, mount } from 'buoy-ui/vanilla';
+
+const number = new Intl.NumberFormat('es', {
+  maximumFractionDigits: 1,
+});
+const mb = (bytes) => number.format(bytes / 1e6);
+
+// Every word the island writes itself. Labels you leave out
+// keep their English text.
+const es = {
+  // Sentences are functions, so plurals come out right.
+  active: (tasks) =>
+    tasks.length === 1
+      ? `Subiendo ${tasks[0].label}`
+      : `Subiendo ${tasks.length} archivos`,
+  doneOne: (task) => `${task.label} subido`,
+  doneMany: (count) => `${count} subidas terminadas`,
+  failures: (count) =>
+    count === 1 ? '1 subida falló' : `${count} subidas fallaron`,
+  summary: (counts) =>
+    [
+      [counts.running, 'en curso'],
+      [counts.queued, 'en cola'],
+      [counts.paused, 'en pausa'],
+      [counts.failed, 'con error'],
+      [counts.done, 'terminadas'],
+    ]
+      .filter(([count]) => count)
+      .map(([count, word]) => `${count} ${word}`)
+      .join(' · '),
+  guard: (count) =>
+    count === 1
+      ? 'Si cierras esta pestaña se detendrá 1 subida.'
+      : `Si cierras esta pestaña se detendrán ${count} subidas.`,
+  amount: (loaded, total) => `${mb(loaded)} de ${mb(total)} MB`,
+  size: (total) => `${mb(total)} MB`,
+  timeLeft: (seconds) =>
+    seconds < 60
+      ? `quedan ${seconds} s`
+      : `quedan ${Math.round(seconds / 60)} min`,
+  failedAt: (error, at) => `${error} en ${at}`,
+  // What a screen reader hears.
+  details: (name) => `${name}. Ver detalles`,
+  waiting: (count) => `${count} en espera`,
+  showActivity: 'Ver actividad',
+
+  // Task states.
+  running: 'En curso',
+  queued: 'En cola',
+  paused: 'En pausa',
+  failed: 'Error',
+  done: 'Listo',
+  notStarted: 'Esperando para empezar',
+  finished: 'Terminado',
+
+  // The tray.
+  activity: 'Actividad',
+  nothing: 'Aún no hay nada',
+  empty: 'Las tareas que inicies aparecerán aquí.',
+  clearDone: 'Quitar terminadas',
+  pauseAll: 'Pausar todo',
+  resumeAll: 'Reanudar todo',
+
+  // Buttons.
+  retry: 'Reintentar',
+  view: 'Ver',
+  open: 'Abrir',
+  cancel: 'Cancelar',
+  pause: 'Pausar',
+  resume: 'Reanudar',
+  remove: 'Quitar',
+  close: 'Cerrar',
+  dismiss: 'Descartar',
+
+  // A promise with no text of its own.
+  loading: 'Cargando…',
+  error: 'Algo salió mal',
+};
+
+mount({ labels: es });
+
+// Later: change the language while the page is open.
+// null puts every label back to its default.
+function setLocale(locale) {
+  buoy.configure({ labels: null });
+  if (locale === 'es') buoy.configure({ labels: es });
+}

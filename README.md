@@ -14,6 +14,7 @@ Messages, loading states and upload progress share one surface at the top of the
 - **Four looks.** Ink, Frost, Paper, and Notch, which hangs from the top edge of the viewport.
 - **Small and dependency-free.** About 16 KB gzipped including styles. Styles inject themselves.
 - **Accessible.** Real buttons, a polite live region, Esc to close, and `prefers-reduced-motion` support.
+- **Any language.** Every word the island writes is a label you can replace.
 
 ## Install
 
@@ -251,7 +252,7 @@ Pass these as props to `<Buoy />`, or to `mount()` and `buoy.configure()` withou
 | `haptics` | `boolean` | `false` | Short vibration where the device supports it |
 | `offset` | `number` | `12` | Distance from the screen edge in px |
 | `taskIcon` | icon | `'upload'` | Icon on the live pill |
-| `labels` | `{ noun, active, doneOne, doneMany }` | | Wording for tasks |
+| `labels` | `Partial<Labels>` | English | The island's own wording. See [Wording and other languages](#wording-and-other-languages) |
 | `injectStyles` | `boolean` | `true` | Set to `false` if you import `buoy-ui/styles.css` yourself |
 | `nonce` | `string` | | Nonce for the injected `<style>` under a strict CSP |
 | `container` | `HTMLElement` | `document.body` | Where to render |
@@ -266,6 +267,60 @@ Pass these as props to `<Buoy />`, or to `mount()` and `buoy.configure()` withou
   }}
 />
 ```
+
+## Wording and other languages
+
+Everything the island writes itself is a label: its buttons, its task states, the tray, and what a screen reader hears. Pass the ones you want to change as `labels`. The rest keep their text.
+
+```tsx
+<Buoy
+  labels={{
+    noun: 'upload',
+    retry: 'Try again',
+    failures: (count) => (count === 1 ? 'An upload failed' : `${count} uploads failed`),
+  }}
+/>
+```
+
+To translate the island, pass them all. Sentences are functions, so plurals and word order can be right in any language:
+
+```ts
+const es: Partial<Labels> = {
+  active: (tasks) => (tasks.length === 1 ? `Subiendo ${tasks[0].label}` : `Subiendo ${tasks.length} archivos`),
+  failures: (count) => (count === 1 ? '1 subida falló' : `${count} subidas fallaron`),
+  retry: 'Reintentar',
+  activity: 'Actividad',
+  // …
+};
+
+mount({ labels: es });
+buoy.configure({ labels: null }); // every label back to its default
+```
+
+The [language example](https://buoy-ui.vercel.app/examples#language) has a complete Spanish set to copy.
+
+| Label | Default | Where it shows |
+| --- | --- | --- |
+| `noun` | `'task'` | The default wording below: "2 tasks failed" |
+| `active(tasks)` | The task's label, or "3 tasks" | The pill while tasks run |
+| `doneOne(task)` | "photo.png finished" | Message when one task finishes |
+| `doneMany(count)` | "3 tasks finished" | Message when several finish |
+| `failures(count)` | "2 tasks failed" | The pill when tasks have failed |
+| `summary(counts)` | "2 running · 1 queued" | Under the tray's title. `counts` has a number for each state |
+| `guard(count)` | "Closing this tab stops 2 tasks." | The tray's warning while tasks run |
+| `amount(loaded, total)` | "18.2 of 24 MB" | A task's amount line, unless the task has its own `format` |
+| `size(total)` | "24 MB" | Beside a finished task |
+| `timeLeft(seconds)` | "5 s left", "2 min left" | After the amount |
+| `failedAt(error, amount)` | "Connection lost at 12 of 24 MB" | Under a failed task |
+| `running`, `queued`, `paused`, `failed`, `done` | "Running", "Queued", … | Task states. `done` is also a promise's default success |
+| `notStarted`, `finished` | "Waiting to start", "Finished" | Under a waiting task, and a finished one with no `doneLabel` |
+| `activity`, `nothing`, `empty` | "Activity", "Nothing here yet", "Tasks you start show up here." | The tray's title, and an empty tray |
+| `clearDone`, `pauseAll`, `resumeAll` | "Clear done", "Pause all", "Resume all" | Tray buttons |
+| `retry`, `view`, `open`, `cancel`, `pause`, `resume`, `remove`, `close`, `dismiss` | "Retry", "View", … | Buttons. In the tray, a screen reader hears them with the task's name |
+| `loading`, `error` | "Loading…", "Something went wrong" | A promise with no text of its own |
+| `details(name)` | "Uploading 3 files. Show details" | Screen readers, on anything that opens |
+| `waiting(count)` | "2 waiting" | Tooltip on the `+2` badge |
+| `showActivity` | "Show activity" | Screen readers, on the resting pill |
 
 ## Theming
 

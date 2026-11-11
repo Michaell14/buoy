@@ -12,7 +12,7 @@ const canceled = () => new DOMException('Canceled', 'AbortError');
 const megabytes = (bytes: number) => (bytes >= 1e6 ? `${(bytes / 1e6).toFixed(bytes >= 1e7 ? 0 : 1)} MB` : `${Math.max(1, Math.round(bytes / 1e3))} KB`);
 
 /** Pretends to send a file: a few seconds of progress, however big it is. Pauses and cancels like a real one. */
-function pretendUpload(bytes: number) {
+export function pretendUpload(bytes: number) {
   return async (task: TaskContext) => {
     const steps = 55 + Math.random() * 45;
     let sent = 0;

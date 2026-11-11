@@ -481,3 +481,58 @@ describe('subscribing to tasks', () => {
     expect(listener).not.toHaveBeenCalled();
   });
 });
+
+describe('labels', () => {
+  it('builds the default wording from the noun and the state names', () => {
+    const s = attached();
+    s.configure({ labels: { noun: 'upload', queued: 'In line' } });
+    const labels = s.cfg.labels;
+    expect(labels.failures(1)).toBe('1 upload failed');
+    expect(labels.failures(2)).toBe('2 uploads failed');
+    expect(labels.guard(3)).toBe('Closing this tab stops 3 uploads.');
+    expect(labels.summary({ running: 2, queued: 1, paused: 0, failed: 0, done: 4 })).toBe('2 running · 1 in line · 4 done');
+    expect(labels.timeLeft(42)).toBe('42 s left');
+    expect(labels.timeLeft(150)).toBe('3 min left');
+    expect(labels.amount(18.2e6, 24e6)).toBe('18.2 of 24 MB');
+  });
+
+  it('puts every label back with null', () => {
+    const s = attached();
+    s.configure({ labels: { noun: 'upload', activity: 'Aktivität', failures: () => 'kaputt' } });
+    s.configure({ labels: null });
+    expect(s.cfg.labels).toEqual(s.defaults.labels);
+    expect(s.cfg.labels.failures(2)).toBe('2 tasks failed');
+  });
+
+  it('uses translated text for a promise, a failed task and a finished batch', async () => {
+    const s = attached();
+    s.configure({
+      labels: {
+        loading: 'Lädt…',
+        done: 'Fertig',
+        error: 'Etwas ist schiefgelaufen',
+        retry: 'Nochmal',
+        failed: 'Fehlgeschlagen',
+        view: 'Ansehen',
+        doneOne: (task) => `${task.label} ist fertig`,
+      },
+    });
+    s.promise(Promise.resolve());
+    expect(s.state.current?.title).toBe('Lädt…');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(s.state.current?.title).toBe('Fertig');
+    s.dismiss();
+    s.promise(Promise.reject(new Error('')), { error: undefined, retry: () => {} }).catch(() => {});
+    await vi.advanceTimersByTimeAsync(0);
+    expect(s.state.current).toMatchObject({ title: 'Etwas ist schiefgelaufen', action: { label: 'Nochmal' } });
+    s.dismiss();
+
+    const failing = s.track(() => Promise.reject(), { label: 'foto.png' });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(s.tasks()[0].error).toBe('Fehlgeschlagen');
+    failing.remove();
+    s.track(work(1), { label: 'foto.png' });
+    await vi.advanceTimersByTimeAsync(150);
+    expect(s.state.current).toMatchObject({ title: 'foto.png ist fertig', action: { label: 'Ansehen' } });
+  });
+});

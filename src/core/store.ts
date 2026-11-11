@@ -1,4 +1,4 @@
-import { clamp, frac } from './format';
+import { amount, clamp, frac, size, timeLeft } from './format';
 import type {
   BuoyOptions,
   ColorScheme,
@@ -106,6 +106,8 @@ const SWAP_MS = 200;
 const ACTION_MS = 6000;
 const SUCCESS_MS = 2000;
 const SUMMARY_MS = 4000;
+/** The order task states are listed in. */
+const STATES: TaskStatus[] = ['running', 'queued', 'paused', 'failed', 'done'];
 
 export const DEFAULT_OPTIONS: Omit<ResolvedOptions, 'labels'> = {
   theme: 'ink',
@@ -125,11 +127,47 @@ export const DEFAULT_OPTIONS: Omit<ResolvedOptions, 'labels'> = {
 export type Store = ReturnType<typeof createStore>;
 
 export function createStore() {
+  // The English wording. Each line reads the current labels, so changing `noun` or a state's name carries through.
+  const nouns = (count: number) => `${count} ${cfg.labels.noun}${count === 1 ? '' : 's'}`;
   const defaultLabels: Labels = {
     noun: 'task',
     active: (tasks) => (tasks.length === 1 ? tasks[0].label : `${tasks.length} ${cfg.labels.noun}s`),
     doneOne: (task) => `${task.label} finished`,
     doneMany: (count) => `${count} ${cfg.labels.noun}s finished`,
+    failures: (count) => `${nouns(count)} failed`,
+    summary: (counts) => STATES.filter((k) => counts[k]).map((k) => `${counts[k]} ${cfg.labels[k].toLowerCase()}`).join(' · '),
+    guard: (count) => `Closing this tab stops ${nouns(count)}.`,
+    amount,
+    size,
+    timeLeft,
+    failedAt: (error, at) => `${error} at ${at}`,
+    details: (name) => `${name}. Show details`,
+    waiting: (count) => `${count} waiting`,
+    running: 'Running',
+    queued: 'Queued',
+    paused: 'Paused',
+    failed: 'Failed',
+    done: 'Done',
+    notStarted: 'Waiting to start',
+    finished: 'Finished',
+    activity: 'Activity',
+    nothing: 'Nothing here yet',
+    empty: 'Tasks you start show up here.',
+    clearDone: 'Clear done',
+    pauseAll: 'Pause all',
+    resumeAll: 'Resume all',
+    showActivity: 'Show activity',
+    retry: 'Retry',
+    view: 'View',
+    open: 'Open',
+    cancel: 'Cancel',
+    pause: 'Pause',
+    resume: 'Resume',
+    remove: 'Remove',
+    close: 'Close',
+    dismiss: 'Dismiss',
+    loading: 'Loading…',
+    error: 'Something went wrong',
   };
   const cfg: ResolvedOptions = { ...DEFAULT_OPTIONS, labels: { ...defaultLabels } };
   const state = {
@@ -140,6 +178,8 @@ export function createStore() {
     attentionDismissed: false,
     batch: 0,
     batchAnnounced: false,
+    /** Increments when the labels change, so views that are open pick up the new wording. */
+    wording: 0,
     /** Increments on every change. Handy for snapshot caching. */
     version: 0,
   };
@@ -188,13 +228,13 @@ export function createStore() {
       target[key] = value;
       changed = true;
     }
-    if (labels) {
-      const l = cfg.labels as unknown as Record<string, unknown>;
-      for (const [key, value] of Object.entries(labels)) {
-        if (value === undefined || l[key] === value) continue;
-        l[key] = value;
-        changed = true;
-      }
+    const l = cfg.labels as unknown as Record<string, unknown>;
+    // `null` goes back to the defaults; anything else changes only the labels it names.
+    for (const [key, value] of Object.entries(labels === null ? defaultLabels : labels ?? {})) {
+      if (value === undefined || l[key] === value) continue;
+      l[key] = value;
+      changed = true;
+      state.wording++;
     }
     if (!changed) return;
     if (rest.concurrency !== undefined) pump();
@@ -396,7 +436,7 @@ export function createStore() {
     emit();
   }
   function promise<T>(input: Promise<T> | (() => Promise<T>), o: PromiseOptions<T> = {}): Promise<T> {
-    const id = push(o.loading ?? 'Loading…', { id: o.id, type: 'loading', duration: Infinity, persist: false });
+    const id = push(o.loading ?? cfg.labels.loading, { id: o.id, type: 'loading', duration: Infinity, persist: false });
     // The result goes to this exact message. If another message with the same id has taken it over by
     // then, the result is stale and is dropped; if the message was dismissed, the result shows on its own.
     const mine = find(id);
@@ -413,8 +453,8 @@ export function createStore() {
       else if (m === mine && m.rev === rev) update(m, title, opts);
     };
     p.then(
-      (value) => settle(typeof o.success === 'function' ? o.success(value) : o.success ?? 'Done', { type: 'success', duration: o.successDuration ?? SUCCESS_MS }),
-      (error) => settle(typeof o.error === 'function' ? o.error(error) : o.error ?? 'Something went wrong', { type: 'error', action: o.retry ? { label: 'Retry', onClick: o.retry } : undefined }),
+      (value) => settle(typeof o.success === 'function' ? o.success(value) : o.success ?? cfg.labels.done, { type: 'success', duration: o.successDuration ?? SUCCESS_MS }),
+      (error) => settle(typeof o.error === 'function' ? o.error(error) : o.error ?? cfg.labels.error, { type: 'error', action: o.retry ? { label: cfg.labels.retry, onClick: o.retry } : undefined }),
     );
     return p;
   }
@@ -556,7 +596,7 @@ export function createStore() {
         (error: unknown) => {
           if (t.attempt !== attempt || t.status === 'canceled') return;
           t.status = 'failed';
-          t.error = error instanceof Error && error.message ? error.message : typeof error === 'string' ? error : 'Failed';
+          t.error = error instanceof Error && error.message ? error.message : typeof error === 'string' ? error : cfg.labels.failed;
           checkDone();
         },
       );
@@ -635,7 +675,7 @@ export function createStore() {
       } else if (done.length && !state.trayOpen && !state.batchAnnounced) {
         state.batchAnnounced = true;
         const title = done.length === 1 ? cfg.labels.doneOne(info(done[0])) : cfg.labels.doneMany(done.length);
-        push(title, { type: 'success', duration: SUMMARY_MS, action: { label: 'View', onClick: openTray } });
+        push(title, { type: 'success', duration: SUMMARY_MS, action: { label: cfg.labels.view, onClick: openTray } });
       }
     }
     emit();
@@ -663,8 +703,7 @@ export function createStore() {
   function summary() {
     const counts: Record<TaskStatus, number> = { running: 0, queued: 0, paused: 0, failed: 0, done: 0 };
     for (const t of state.tasks) if (t.status !== 'canceled') counts[t.status]++;
-    const order: TaskStatus[] = ['running', 'queued', 'paused', 'failed', 'done'];
-    return { counts, text: order.filter((k) => counts[k]).map((k) => `${counts[k]} ${k}`).join(' · ') };
+    return { counts, text: cfg.labels.summary(counts) };
   }
 
   /* ───── Tray ───── */

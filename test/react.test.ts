@@ -1,6 +1,7 @@
 import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { describe, expect, it } from 'vitest';
+import { shared } from '../src/core/shared';
 import { Buoy, buoy, useBuoyTasks } from '../src/index';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -30,6 +31,35 @@ describe('<Buoy />', () => {
     await act(async () => root.unmount());
     expect(document.querySelector('.buoy')).toBeNull();
     buoy.dismiss();
+  });
+
+  it('takes any label as a prop, keeps inline functions from reconfiguring, and restores defaults', async () => {
+    const { store } = shared();
+    let configured = 0;
+    const stop = store.subscribe((event) => {
+      if (event === 'config') configured++;
+    });
+    const host = document.body.appendChild(document.createElement('div'));
+    const root = createRoot(host);
+    const render = (activity: string, suffix: string) =>
+      act(async () => root.render(createElement(Buoy, { labels: { activity, failures: (count) => `${count} ${suffix}` } })));
+
+    await render('Aktivität', 'fehlgeschlagen');
+    expect(store.cfg.labels.activity).toBe('Aktivität');
+    expect(store.cfg.labels.failures(2)).toBe('2 fehlgeschlagen');
+    expect(store.cfg.labels.close).toBe('Close');
+
+    // A new inline function is picked up without another configure.
+    const before = configured;
+    await render('Aktivität', 'gescheitert');
+    expect(configured).toBe(before);
+    expect(store.cfg.labels.failures(2)).toBe('2 gescheitert');
+
+    await act(async () => root.render(createElement(Buoy, {})));
+    expect(store.cfg.labels.activity).toBe('Activity');
+    expect(store.cfg.labels.failures(2)).toBe('2 tasks failed');
+    stop();
+    await act(async () => root.unmount());
   });
 
   it('shares tasks with React through useBuoyTasks', async () => {

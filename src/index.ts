@@ -42,6 +42,11 @@ export function Buoy(props: BuoyProps): null {
   // Label functions are read through refs, so inline arrow functions don't reconfigure on every render.
   const latestLabels = useRef(labels);
   latestLabels.current = labels;
+  // What does reconfigure: a label that is added or removed, or a piece of text that changes.
+  const wording = Object.entries(labels ?? {})
+    .map(([key, value]) => (typeof value === 'function' ? `${key}()` : value === undefined ? '' : `${key}=${value}`))
+    .sort()
+    .join('\n');
 
   useEffect(() => {
     const h = mount({ container, injectStyles, nonce });
@@ -55,19 +60,22 @@ export function Buoy(props: BuoyProps): null {
   const { store } = shared();
   const defaults = store.defaults;
   const { theme, position, resting, richColors, expandOnHover, duration, concurrency, guard, haptics, colorScheme, offset, taskIcon } = options;
-  const noun = labels?.noun;
-  const hasActive = !!labels?.active;
-  const hasDoneOne = !!labels?.doneOne;
-  const hasDoneMany = !!labels?.doneMany;
 
   useEffect(() => {
     const d = defaults.options;
-    const next: Labels = {
-      noun: noun ?? defaults.labels.noun,
-      active: hasActive ? (tasks) => latestLabels.current!.active!(tasks) : defaults.labels.active,
-      doneOne: hasDoneOne ? (task) => latestLabels.current!.doneOne!(task) : defaults.labels.doneOne,
-      doneMany: hasDoneMany ? (count) => latestLabels.current!.doneMany!(count) : defaults.labels.doneMany,
-    };
+    // Start from the defaults, so a label that is no longer passed goes back to its own.
+    const next = { ...defaults.labels } as Record<string, unknown>;
+    type Given = Record<string, unknown> | undefined;
+    for (const [key, value] of Object.entries((latestLabels.current as Given) ?? {})) {
+      if (typeof value === 'function') {
+        next[key] = (...args: unknown[]) => {
+          const latest = (latestLabels.current as Given)?.[key];
+          return (typeof latest === 'function' ? latest : value)(...args);
+        };
+      } else if (value !== undefined) {
+        next[key] = value;
+      }
+    }
     // Missing props go back to their defaults, so removing a prop undoes it.
     store.configure({
       theme: theme ?? d.theme,
@@ -82,9 +90,9 @@ export function Buoy(props: BuoyProps): null {
       colorScheme: colorScheme ?? d.colorScheme,
       offset: offset ?? d.offset,
       taskIcon: taskIcon ?? d.taskIcon,
-      labels: next,
+      labels: next as unknown as Labels,
     });
-  }, [store, defaults, theme, position, resting, richColors, expandOnHover, duration, concurrency, guard, haptics, colorScheme, offset, taskIcon, noun, hasActive, hasDoneOne, hasDoneMany]);
+  }, [store, defaults, theme, position, resting, richColors, expandOnHover, duration, concurrency, guard, haptics, colorScheme, offset, taskIcon, wording]);
 
   return null;
 }
