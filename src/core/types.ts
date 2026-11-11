@@ -13,6 +13,12 @@ export type ColorScheme = 'system' | 'light' | 'dark';
 export type MessageType = 'default' | 'success' | 'error' | 'warning' | 'info' | 'loading' | 'live';
 export type Tone = 'accent' | 'success' | 'error' | 'warning' | 'info';
 export type TaskStatus = 'queued' | 'running' | 'paused' | 'failed' | 'done';
+/**
+ * Why a message or live activity left the island: its time ran out (`timeout`), one of its buttons
+ * was pressed (`action`), the person dismissed it with a tap, a swipe, its close button or Esc
+ * (`user`), or your code called `buoy.dismiss()` or `close()` (`code`).
+ */
+export type DismissReason = 'timeout' | 'action' | 'user' | 'code';
 
 /** A built-in icon name, a trusted `<svg>…</svg>` string, or `null` for none. */
 export type IconInput = IconName | (string & {}) | null;
@@ -42,7 +48,8 @@ export interface MessageOptions {
   duration?: number;
   /** Stay until dismissed. Newer messages show first, then this one comes back. Errors persist by default. */
   persist?: boolean;
-  onDismiss?: () => void;
+  /** Called when the message leaves, with the reason. Replacing a message by its id does not count as leaving. */
+  onDismiss?: (reason: DismissReason) => void;
 }
 
 export interface PromiseOptions<T> {
@@ -101,12 +108,20 @@ export interface TrackOptions {
   onOpen?: (task: TaskInfo) => void;
 }
 
-export interface TaskHandle {
+export interface TaskHandle<T = unknown> {
   readonly id: string;
+  /**
+   * Resolves with what your function returned, once the task finishes. A failed task can still be
+   * retried, so a failure leaves this waiting. It rejects with an `AbortError` if the task is
+   * canceled, or removed before it finished.
+   */
+  readonly done: Promise<T>;
   pause(): void;
   resume(): void;
   cancel(): void;
   retry(): void;
+  /** Takes the task off the island and out of the tray, whatever state it is in. A task that is still going is canceled. */
+  remove(): void;
 }
 
 /** Text the island writes about tasks. */
@@ -167,8 +182,8 @@ export interface LiveOptions {
   id?: string;
   /** Leaves after this many milliseconds. Without it, the activity stays until you close it. */
   duration?: number;
-  /** Called when the activity leaves, however that happens. */
-  onClose?: () => void;
+  /** Called when the activity leaves, however that happens, with the reason. */
+  onClose?: (reason: DismissReason) => void;
 }
 
 export interface LiveHandle {
@@ -206,12 +221,17 @@ export interface Buoy {
   promise<T>(promise: Promise<T> | (() => Promise<T>), options?: PromiseOptions<T>): Promise<T>;
   /** Dismiss one message by id, or every message when called without one. */
   dismiss(id?: string): void;
-  /** Run a piece of work and show its progress. */
-  track(run: (task: TaskContext) => unknown, options?: TrackOptions): TaskHandle;
+  /** Run a piece of work and show its progress. `await` the handle's `done` to carry on when it finishes. */
+  track<T>(run: (task: TaskContext) => T, options?: TrackOptions): TaskHandle<Awaited<T>>;
   /** Show something ongoing that you draw yourself, such as a timer, a call or a player. It stays until you close it. */
   live(options: LiveOptions): LiveHandle;
   /** A snapshot of all tasks. */
   tasks(): TaskInfo[];
+  /**
+   * Calls `listener` with the tasks whenever one is added, changes state, reports progress or is
+   * removed. Returns a function that stops it. With React, use the `useBuoyTasks()` hook instead.
+   */
+  subscribe(listener: (tasks: TaskInfo[]) => void): () => void;
   tray: { open(): void; close(): void; toggle(): void };
   /** Change options without React. With React, pass props to <Buoy /> instead. */
   configure(options: BuoyOptions): void;

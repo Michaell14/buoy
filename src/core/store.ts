@@ -2,6 +2,7 @@ import { clamp, frac } from './format';
 import type {
   BuoyOptions,
   ColorScheme,
+  DismissReason,
   Labels,
   LiveHandle,
   LiveOptions,
@@ -37,7 +38,7 @@ export interface Msg {
   deadline: number;
   shownAt: number;
   tapped: boolean;
-  onDismiss: (() => void) | null;
+  onDismiss: ((reason: DismissReason) => void) | null;
   /** Live activities: draws the content. */
   render: ((el: HTMLElement, view: LiveView) => void) | null;
   expandable: boolean;
@@ -70,6 +71,9 @@ export interface Task {
   ctrl: AbortController | null;
   batch: number;
   error: string;
+  /** Settle the handle's `done` promise. Calling either after the first one does nothing. */
+  resolve: (value: unknown) => void;
+  reject: (error: unknown) => void;
 }
 
 export interface ResolvedOptions {
@@ -157,6 +161,17 @@ export function createStore() {
   function report(error: unknown) {
     if (typeof console !== 'undefined') console.error(error);
   }
+  /** Tells `listener` about the tasks whenever they change, and not when only a message did. */
+  function onTasks(listener: (tasks: TaskInfo[]) => void): () => void {
+    const print = () => state.tasks.map((t) => [t.id, t.status, t.loaded, t.fraction, t.total, t.attempt, t.error].join()).join('|');
+    let last = print();
+    return subscribe(() => {
+      const next = print();
+      if (next === last) return;
+      last = next;
+      safe(() => listener(state.tasks.map(info)));
+    });
+  }
   function buzz() {
     if (!cfg.haptics || typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;
     try { navigator.vibrate(8); } catch { /* not supported */ }
@@ -194,7 +209,7 @@ export function createStore() {
     m.deadline = now() + m.remaining;
     m.timer = setTimeout(() => {
       m.timer = 0;
-      dismiss(m.id);
+      dismiss(m.id, 'timeout');
     }, m.remaining);
   }
   function pauseTimer(m: Msg) {
@@ -306,22 +321,26 @@ export function createStore() {
     if (m === state.current) arm(m);
     emit();
   }
-  function dismiss(id?: string) {
+  function dismiss(id?: string, reason: DismissReason = 'code') {
     const cur = state.current;
+    const tell = (m: Msg) => {
+      const heard = m.onDismiss;
+      if (heard) safe(() => heard(reason));
+    };
     if (id === undefined) {
       // No id: clear everything. Every message that leaves hears about it, shown or waiting.
       const gone = [cur, ...state.queue].filter((m): m is Msg => !!m);
       for (const m of gone) pauseTimer(m);
       state.queue = [];
       state.current = null;
-      for (const m of gone) if (m.onDismiss) safe(m.onDismiss);
+      gone.forEach(tell);
       emit();
       return;
     }
     if (cur && cur.id === id) {
       pauseTimer(cur);
       state.current = null;
-      if (cur.onDismiss) safe(cur.onDismiss);
+      tell(cur);
       const next = state.queue.shift();
       if (next) {
         state.current = next;
@@ -333,7 +352,7 @@ export function createStore() {
       if (i < 0) return;
       const [gone] = state.queue.splice(i, 1);
       pauseTimer(gone);
-      if (gone.onDismiss) safe(gone.onDismiss);
+      tell(gone);
     }
     emit();
   }
@@ -425,9 +444,17 @@ export function createStore() {
     state.attentionDismissed = false;
     if (clearDone) state.tasks = state.tasks.filter((t) => t.status !== 'done');
   }
-  function track(run: (task: TaskContext) => unknown, o: TrackOptions = {}): TaskHandle {
+  function track<T>(run: (task: TaskContext) => T, o: TrackOptions = {}): TaskHandle<Awaited<T>> {
     if (typeof run !== 'function') throw new TypeError('buoy.track() needs a function that does the work.');
     if (!active().length) newBatch(true);
+    let resolve!: (value: unknown) => void;
+    let reject!: (error: unknown) => void;
+    const done = new Promise<unknown>((yes, no) => {
+      resolve = yes;
+      reject = no;
+    });
+    // Canceling a task nobody is awaiting is not an error worth a console warning.
+    done.catch(() => {});
     const t: Task = {
       id: uid('t'),
       label: String(o.label ?? 'Task'),
@@ -451,17 +478,27 @@ export function createStore() {
       ctrl: null,
       batch: state.batch,
       error: '',
+      resolve,
+      reject,
     };
     state.tasks.push(t);
     pump();
     emit();
     return {
       id: t.id,
+      done: done as Promise<Awaited<T>>,
       pause: () => pauseTask(t),
       resume: () => resumeTask(t),
       cancel: () => cancelTask(t),
       retry: () => retryTask(t),
+      remove: () => (isActive(t) ? cancelTask(t) : removeTask(t)),
     };
+  }
+  /** What `done` rejects with when a task ends without finishing. */
+  function aborted(): Error {
+    const error = new Error('The task was canceled');
+    error.name = 'AbortError';
+    return error;
   }
   function measureRate(t: Task) {
     const at = now();
@@ -508,11 +545,12 @@ export function createStore() {
     Promise.resolve()
       .then(() => t.run(context))
       .then(
-        () => {
+        (value) => {
           if (t.attempt !== attempt || t.status === 'canceled') return;
           t.status = 'done';
           if (t.total) t.loaded = t.total;
           t.fraction = 1;
+          t.resolve(value);
           checkDone();
         },
         (error: unknown) => {
@@ -564,6 +602,7 @@ export function createStore() {
     if (t.ctrl) t.ctrl.abort();
     flush(t);
     state.tasks = state.tasks.filter((x) => x !== t);
+    t.reject(aborted());
     checkDone();
   }
   function retryTask(t: Task) {
@@ -577,6 +616,8 @@ export function createStore() {
   function removeTask(t: Task) {
     if (isActive(t)) return;
     state.tasks = state.tasks.filter((x) => x !== t);
+    // A failed task that is taken away will never finish. One that is done has settled already.
+    t.reject(aborted());
     emit();
   }
   function clearDone() {
@@ -656,6 +697,7 @@ export function createStore() {
     state,
     defaults: { options: DEFAULT_OPTIONS, labels: defaultLabels },
     subscribe,
+    onTasks,
     configure,
     setPaused,
     push,

@@ -54,6 +54,25 @@ describe('island', () => {
     island.destroy();
   });
 
+  it('tells onDismiss that a button was pressed, before the button runs, or that the person dismissed it', async () => {
+    const store = createStore();
+    const island = createIsland(store);
+    const order: string[] = [];
+    store.push('Conversation archived', {
+      action: { label: 'Undo', onClick: () => order.push('undo') },
+      onDismiss: (reason) => order.push(reason),
+    });
+    await settle();
+    island.element.querySelector<HTMLButtonElement>('[data-act="action"]')!.click();
+    expect(order).toEqual(['action', 'undo']);
+
+    store.push('Link copied', { onDismiss: (reason) => order.push(reason) });
+    await settle();
+    island.element.querySelector<HTMLElement>('.buoy-title')!.click();
+    expect(order).toEqual(['action', 'undo', 'user']);
+    island.destroy();
+  });
+
   it('draws a live activity, refreshes it in place and leaves other redraws alone', async () => {
     const store = createStore();
     const island = createIsland(store);

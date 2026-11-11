@@ -611,7 +611,7 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
   function swipeAway() {
     if (state.trayOpen) closeTray();
     else if (state.current && state.current.type === 'live') store.setOpen(state.current.id, false);
-    else if (state.current) store.dismiss(state.current.id);
+    else if (state.current) store.dismiss(state.current.id, 'user');
     else if (view && view.kind === 'attention') store.dismissAttention();
   }
 
@@ -621,13 +621,14 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
     const m = state.current;
     switch (el.getAttribute('data-act')) {
       case 'dismiss':
-        if (m) store.dismiss(m.id);
+        if (m) store.dismiss(m.id, 'user');
         break;
       case 'action': {
         if (!m) break;
         const i = Number(el.getAttribute('data-i'));
         const action = i < 0 ? m.action : m.actions && m.actions[i];
-        store.dismiss(m.id);
+        // The message leaves first, so an action that shows a new one with the same id starts fresh.
+        store.dismiss(m.id, 'action');
         if (action && action.onClick) action.onClick();
         break;
       }
@@ -698,7 +699,7 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
     const m = state.current;
     if (!m || m.type === 'live' || !view.key.startsWith(`m:${m.id}:`)) return;
     if (hasDetails(m)) store.tap(m.id);
-    else if (m.type !== 'loading') store.dismiss(m.id);
+    else if (m.type !== 'loading') store.dismiss(m.id, 'user');
   });
 
   // Hovering pauses timers and, after a short intent delay, opens a message's details.

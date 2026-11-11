@@ -97,7 +97,18 @@ buoy.dismiss(); // everything
 | `duration` | `number` (ms) | Defaults to 3000, or 6000 with buttons. `Infinity` keeps it |
 | `persist` | `boolean` | Stay until dismissed. Errors persist by default |
 | `id` | `string` | Update an existing message |
-| `onDismiss` | `() => void` | Called when it leaves |
+| `onDismiss` | `(reason) => void` | Called when it leaves, with the reason |
+
+`onDismiss` is told why the message left: `'timeout'` when its time ran out, `'action'` when one of its buttons was pressed, `'user'` for a tap, a swipe, the close button or Esc, and `'code'` when you called `buoy.dismiss()`. It runs before the button's own `onClick`. Updating a message by its id does not count as leaving. That makes an undo that only commits when it wasn't used short to write:
+
+```ts
+buoy('Conversation archived', {
+  action: { label: 'Undo', onClick: restore },
+  onDismiss: (reason) => {
+    if (reason !== 'action') archiveOnServer();
+  },
+});
+```
 
 Built-in icons: `link`, `check`, `error`, `warning`, `info`, `upload`, `download`, `file`, `archive`, `image`, `send`, `folder`, `copy`, `stack`, `bell`, `timer`, `user`, `pause`, `play`, `retry`, `x`, `open`.
 
@@ -132,7 +143,12 @@ job.pause();
 job.resume();
 job.cancel();
 job.retry();
+job.remove(); // off the island and out of the tray, whatever state it is in
+
+const result = await job.done; // what the function returned, once it has finished
 ```
+
+`job.done` waits until the task has really finished. A failed task can still be retried, so a failure leaves it waiting, and it resolves after a retry that works. It rejects with an `AbortError` if the task is canceled, or removed before it finished.
 
 The function receives a task context:
 
@@ -165,6 +181,14 @@ function UploadBadge() {
   const running = tasks.filter((t) => t.status === 'running').length;
   return running ? <span>{running} uploading</span> : null;
 }
+```
+
+Without React, `buoy.subscribe()` calls you with the same list whenever a task is added, changes state, reports progress or is removed. It returns a function that stops it, and `buoy.tasks()` gives the list as it is now:
+
+```ts
+const stop = buoy.subscribe((tasks) => {
+  badge.textContent = `${tasks.filter((t) => t.status === 'running').length} uploading`;
+});
 ```
 
 You can also open the tray yourself: `buoy.tray.open()`, `buoy.tray.close()`, `buoy.tray.toggle()`.
@@ -203,7 +227,7 @@ const tick = setInterval(() => {
 | `expandable` | A tap opens the details, and `render` gets `expanded: true`. Esc or a click outside closes them. |
 | `id` | Replaces the live activity with this id, and announces the new label. |
 | `duration` | Leaves after this many milliseconds. Without it, the activity stays until `close()`. |
-| `onClose` | Called when the activity leaves. |
+| `onClose(reason)` | Called when the activity leaves, with the same reasons as a message's `onDismiss`. |
 
 The handle has `refresh()`, `expand(open?)` and `close()`. An expandable activity's compact view sits inside a button, so keep its markup non-interactive and put buttons in the expanded view.
 

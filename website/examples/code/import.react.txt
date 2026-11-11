@@ -2,21 +2,22 @@ import { buoy } from 'buoy-ui';
 
 const count = new Intl.NumberFormat();
 
-export function ImportButton({ file }: { file: File }) {
-  function start() {
-    buoy.track(
+export function ImportButton({ file, onImported }: Props) {
+  async function start() {
+    const job = buoy.track(
       async (task) => {
         // 1 on the first run, 2 after a retry: pick up where
         // the last run stopped.
-        const job = await openImport(file, {
+        const run = await openImport(file, {
           resume: task.attempt > 1,
         });
-        for await (const step of job.steps(task.signal)) {
+        for await (const step of run.steps(task.signal)) {
           await task.checkpoint();
           task.progress(step.done, step.total);
         }
         // Anything thrown in here marks the task as failed
         // and shows its message.
+        return run.summary;
       },
       {
         label: file.name,
@@ -27,6 +28,14 @@ export function ImportButton({ file }: { file: File }) {
         doneLabel: 'Imported just now',
       },
     );
+
+    try {
+      // Resolves with what the work returned, once it has
+      // finished, however many tries that took.
+      onImported(await job.done);
+    } catch {
+      // Canceled, or removed before it finished.
+    }
   }
 
   return <button onClick={start}>Import contacts</button>;

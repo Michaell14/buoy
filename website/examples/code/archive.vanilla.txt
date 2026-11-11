@@ -19,10 +19,11 @@ function archive(row) {
       label: 'Undo',
       onClick: () => rows.forEach((r) => (r.hidden = false)),
     },
-    // Runs when the message leaves: the next archive starts a
-    // new batch.
-    onDismiss: () => {
+    // Runs when the message leaves, and says why. Unless
+    // Undo was pressed, the archive becomes permanent.
+    onDismiss: (reason) => {
       batch = [];
+      if (reason !== 'action') archiveOnServer(rows);
     },
   });
 }

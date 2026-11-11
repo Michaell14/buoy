@@ -8,6 +8,7 @@ export type {
   Buoy as BuoyApi,
   BuoyOptions,
   ColorScheme,
+  DismissReason,
   IconInput,
   IconName,
   Labels,

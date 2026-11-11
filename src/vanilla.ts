@@ -5,6 +5,7 @@ export type {
   Buoy,
   BuoyOptions,
   ColorScheme,
+  DismissReason,
   IconInput,
   IconName,
   Labels,
