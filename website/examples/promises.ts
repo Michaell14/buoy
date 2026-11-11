@@ -3,6 +3,8 @@ import { buoy } from '../../src/vanilla';
 import { $, ICON, view, wait, type Example } from './kit';
 import checkoutReact from './code/checkout.react.txt';
 import checkoutVanilla from './code/checkout.vanilla.txt';
+import exportReact from './code/export.react.txt';
+import exportVanilla from './code/export.vanilla.txt';
 import saveReact from './code/save.react.txt';
 import saveVanilla from './code/save.vanilla.txt';
 
@@ -141,4 +143,76 @@ const checkout: Example = {
   },
 };
 
-export const PROMISES = [save, checkout];
+const exportReport: Example = {
+  id: 'export',
+  group: 'Promises',
+  title: 'Export a report',
+  api: 'buoy.promise() with a result',
+  blurb: 'A result can be more than a line. Here the success opens into a card with the file and two things to do with it.',
+  hint: 'Export the report, then use the buttons on the card.',
+  notes: [
+    ['A result with more to say', 'success and error can each return a whole message: a description, an icon and buttons.'],
+    ['Buttons buy time', 'A plain success leaves after two seconds. One with buttons stays for six, and longer while hovered.'],
+    ['Still one message', 'The card opens from the same pill that was loading. Nothing is added and nothing jumps.'],
+  ],
+  code: { react: exportReact, vanilla: exportVanilla },
+  mount(root) {
+    let busy = false;
+    view(
+      root,
+      `<div class="x-card">
+        <div class="x-head">
+          <span class="x-tile">${ICON.file}</span>
+          <div class="x-text"><strong>Q3 report</strong><span>18 pages · updated today</span></div>
+        </div>
+        <div class="x-field">
+          <label for="x-export-format">Format</label>
+          <select class="x-input" id="x-export-format"><option value="pdf">PDF</option><option value="csv">CSV</option></select>
+        </div>
+        <label class="x-check"><input type="checkbox"><span>Make this export fail</span></label>
+        <button type="button" class="x-btn is-wide" data-do="export">Export</button>
+      </div>`,
+      () => run(),
+    );
+    const button = $<HTMLButtonElement>(root, 'button');
+    const fails = $<HTMLInputElement>(root, 'input');
+    // A pretend export: it takes a moment, then hands back the file.
+    const build = async (format: string) => {
+      await wait(1800);
+      if (fails.checked) throw new Error('The report is still being prepared. Try again in a minute.');
+      return format === 'csv' ? { name: 'Q3-report.csv', size: '86 KB' } : { name: 'Q3-report.pdf', size: '4.2 MB' };
+    };
+    function run() {
+      if (busy) return;
+      busy = true;
+      button.disabled = true;
+      button.textContent = 'Exporting…';
+      buoy
+        .promise(build($<HTMLSelectElement>(root, 'select').value), {
+          id: 'export',
+          loading: 'Exporting…',
+          success: (file) => ({
+            title: 'Export ready',
+            description: `${file.name} · ${file.size}`,
+            icon: 'file',
+            expanded: true,
+            actions: [
+              { label: 'Open', primary: true, onClick: () => buoy(`Opened ${file.name}`, { icon: 'open' }) },
+              { label: 'Show in folder', onClick: () => buoy(`Showing ${file.name} in Downloads`, { icon: 'folder' }) },
+            ],
+          }),
+          error: (error) => ({ title: "Couldn't export", description: message(error, 'Something went wrong.') }),
+          retry: run,
+        })
+        .catch(() => {})
+        .finally(() => {
+          busy = false;
+          button.disabled = false;
+          button.textContent = 'Export';
+        });
+    }
+    return () => {};
+  },
+};
+
+export const PROMISES = [save, checkout, exportReport];

@@ -12,7 +12,7 @@ Messages, loading states and upload progress share one surface at the top of the
 - **Promises on the same shape.** Loading turns into success or error in place.
 - **Real progress.** Track uploads or any long job: a live ring, then a tray with pause, resume, retry and cancel.
 - **Four looks.** Ink, Frost, Paper, and Notch, which hangs from the top edge of the viewport.
-- **Small and dependency-free.** About 16 KB gzipped including styles. Styles inject themselves.
+- **Small and dependency-free.** About 17 KB gzipped including styles. Styles inject themselves.
 - **Accessible.** Real buttons, a polite live region, Esc to close, and `prefers-reduced-motion` support.
 - **Any language.** Every word the island writes is a label you can replace.
 
@@ -126,6 +126,28 @@ buoy.promise(save(), {
 
 It returns the promise you passed, so you can still `await` it. Pass `id` to show the promise in an existing message, or to give its message an id. If a newer message takes that id before the promise settles, the result is dropped.
 
+Each state can be a whole message instead of a title: an object with a `title` and any message option, such as a description, an icon or buttons.
+
+```ts
+buoy.promise(exportReport(), {
+  loading: 'Exporting…',
+  success: (file) => ({
+    title: 'Export ready',
+    description: `${file.name} · ${file.size}`,
+    icon: 'file',
+    expanded: true,
+    actions: [
+      { label: 'Open', primary: true, onClick: () => open(file) },
+      { label: 'Show in folder', onClick: () => reveal(file) },
+    ],
+  }),
+  error: (e) => ({ title: "Couldn't export", description: e instanceof Error ? e.message : undefined }),
+  retry: exportAgain,
+});
+```
+
+A plain success leaves after two seconds (`successDuration`). One with buttons keeps a message's usual six. `retry` adds its button to an error unless the error brings an `action` of its own.
+
 ## Background tasks
 
 Give `buoy.track()` a function that does the work and reports progress. The island shows a live ring. Tapping it opens the tray, where each task can pause, resume, retry or cancel.
@@ -226,11 +248,53 @@ const tick = setInterval(() => {
 | `label` | What the activity is, for screen readers. Read out when it appears. |
 | `render(el, { expanded })` | Fills the island. Called when it appears, when it opens or closes, and on every `refresh()`. |
 | `expandable` | A tap opens the details, and `render` gets `expanded: true`. Esc or a click outside closes them. |
-| `id` | Replaces the live activity with this id, and announces the new label. |
+| `id` | Replaces the live activity with this id, and announces the new label. Its details stay open if they were. |
 | `duration` | Leaves after this many milliseconds. Without it, the activity stays until `close()`. |
 | `onClose(reason)` | Called when the activity leaves, with the same reasons as a message's `onDismiss`. |
 
 The handle has `refresh()`, `expand(open?)` and `close()`. An expandable activity's compact view sits inside a button, so keep its markup non-interactive and put buttons in the expanded view.
+
+### In React
+
+`<BuoyLive>` is a live activity as a component. Its children are on the island for as long as it is rendered, and they are ordinary React content, so state and props update them. There is no `render` and no `refresh()`.
+
+```tsx
+import { BuoyLive } from 'buoy-ui';
+
+function FocusTimer({ left, running }: { left: number; running: boolean }) {
+  if (!running) return null;
+  return (
+    <BuoyLive label="Focus timer" expandable>
+      {({ expanded, close }) =>
+        expanded ? (
+          <div className="buoy-exp">
+            <span className="buoy-exp-title">Focus</span>
+            <span className="buoy-exp-desc">{clock(left)} left</span>
+            <div className="buoy-actions">
+              <button className="buoy-btn" onClick={close}>End</button>
+            </div>
+          </div>
+        ) : (
+          <span className="buoy-row no-icon">
+            <span className="buoy-title">Focus</span>
+            <span className="buoy-pct">{clock(left)}</span>
+          </span>
+        )
+      }
+    </BuoyLive>
+  );
+}
+```
+
+| Prop | |
+| --- | --- |
+| `label` | What the activity is, for screen readers. Read out when it appears, and again when it changes. |
+| `children` | React content, or a function of `{ expanded, expand, close }` when the compact and expanded layouts differ. |
+| `expandable` | A tap opens the details, and `children` is called with `expanded: true`. |
+| `duration` | Leaves after this many milliseconds. |
+| `onClose(reason)` | Called when the activity leaves while the component is still rendered. Stop rendering it then. Unmounting does not call it. |
+
+It needs `react-dom`, which any React app on the web already has.
 
 To match every theme, reuse the island's own classes: `buoy-row`, `buoy-ic` (with `data-tone="accent|success|error|warn"`), `buoy-title`, `buoy-pct`, `buoy-act`, `buoy-ring`, `buoy-exp`, `buoy-exp-head`, `buoy-tile`, `buoy-exp-text`, `buoy-exp-title`, `buoy-exp-desc`, `buoy-x`, `buoy-bar`, `buoy-actions` and `buoy-btn` (with `is-primary` or `is-danger`). For anything else, these custom properties hold the current theme's colors: `--buoy-bg`, `--buoy-fg`, `--buoy-fg-2`, `--buoy-chip`, `--buoy-chip-2`, `--buoy-track`, `--buoy-tint`, `--buoy-success`, `--buoy-error` and `--buoy-warn`.
 

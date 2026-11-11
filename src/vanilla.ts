@@ -18,6 +18,7 @@ export type {
   MountHandle,
   MountOptions,
   Position,
+  PromiseMessage,
   PromiseOptions,
   Resting,
   TaskContext,

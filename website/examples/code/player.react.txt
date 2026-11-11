@@ -1,51 +1,34 @@
-import { useEffect, useRef } from 'react';
-import { buoy, type LiveHandle } from 'buoy-ui';
-
-const PILL =
-  '<span class="buoy-row no-icon"><span class="buoy-title"></span></span>';
-const DETAILS =
-  '<div class="buoy-exp"><span class="buoy-exp-title"></span>' +
-  '<span class="buoy-exp-desc"></span><div class="buoy-actions">' +
-  '<button type="button" class="buoy-btn is-primary"></button></div></div>';
+import { BuoyLive } from 'buoy-ui';
 
 export function Player({ track, playing, onToggle }: PlayerProps) {
-  const live = useRef(null as LiveHandle | null);
-  // render() runs later, so it reads the newest props through
-  // a ref.
-  const latest = useRef({ track, playing, onToggle });
-  latest.current = { track, playing, onToggle };
+  // On the island for as long as <BuoyLive> is rendered. Its
+  // children are ordinary React content, so props update them.
+  return (
+    <>
+      <button onClick={onToggle}>{playing ? 'Pause' : 'Play'}</button>
 
-  // The activity stays for as long as this track is loaded.
-  useEffect(() => {
-    const activity = buoy.live({
-      label: `Now playing: ${track.title} by ${track.artist}`,
-      expandable: true, // a tap opens the details
-      render(el, { expanded }) {
-        const now = latest.current;
-        const view = expanded ? 'details' : 'pill';
-        if (el.dataset.view !== view) {
-          // Build each view once, then only update it, so
-          // focus survives a refresh.
-          el.dataset.view = view;
-          el.innerHTML = expanded ? DETAILS : PILL;
+      <BuoyLive
+        label={`Now playing: ${track.title} by ${track.artist}`}
+        expandable
+      >
+        {({ expanded }) =>
+          expanded ? (
+            <div className="buoy-exp">
+              <span className="buoy-exp-title">{track.title}</span>
+              <span className="buoy-exp-desc">{track.artist}</span>
+              <div className="buoy-actions">
+                <button className="buoy-btn is-primary" onClick={onToggle}>
+                  {playing ? 'Pause' : 'Play'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <span className="buoy-row no-icon">
+              <span className="buoy-title">{track.title}</span>
+            </span>
+          )
         }
-        const title = el.querySelector('.buoy-title, .buoy-exp-title')!;
-        title.textContent = now.track.title;
-        if (!expanded) return;
-        const artist = el.querySelector('.buoy-exp-desc')!;
-        artist.textContent = now.track.artist;
-        const button = el.querySelector('button')!;
-        button.textContent = now.playing ? 'Pause' : 'Play';
-        button.onclick = () => latest.current.onToggle();
-      },
-    });
-    live.current = activity;
-    return () => activity.close();
-  }, [track.id]);
-
-  // Draw again in place when playback changes. Nothing moves
-  // or is announced.
-  useEffect(() => live.current?.refresh(), [playing]);
-
-  return <button onClick={onToggle}>{playing ? 'Pause' : 'Play'}</button>;
+      </BuoyLive>
+    </>
+  );
 }

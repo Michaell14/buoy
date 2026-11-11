@@ -32,7 +32,7 @@ const player: Example = {
   blurb: 'A live activity is yours to draw. The player below and the island read the same state, so either one can drive it.',
   hint: 'Press play, then tap the island. Its controls drive the same player.',
   notes: [
-    ['You draw it', 'render() fills the island with your own markup. The island keeps the shape, the motion and the queue.'],
+    ['You draw it', 'render() fills the island with your own markup, or <BuoyLive> takes JSX in React. The island keeps the shape, the motion and the queue.'],
     ['Two sizes', 'With expandable, a tap opens the details and render() is told expanded: true.'],
     ['One state, two views', 'refresh() draws again in place, without moving or announcing anything.'],
   ],
@@ -125,7 +125,7 @@ const timer: Example = {
   blurb: 'Anything that ticks can sit on the island. The countdown draws again every second without the island moving.',
   hint: 'Pick 1 min to watch it finish. Tap the island for pause and end.',
   notes: [
-    ['Safe every second', 'refresh() draws again in place. Nothing moves and nothing is read out.'],
+    ['Safe every second', 'refresh() draws again in place, and in React a new render does. Nothing moves and nothing is read out.'],
     ['Ends itself', 'When the time runs out the activity closes and an ordinary message takes its place.'],
     ['Fits every theme', 'Markup built from the island classes follows the theme. Try the switcher above.'],
   ],
@@ -211,7 +211,7 @@ const record: Example = {
   hint: 'Start a recording, then tap the island and stop it from there.',
   notes: [
     ['Stays until closed', 'A live activity has no timer of its own. It leaves when you call close().'],
-    ['Told when it leaves', 'onClose runs however the activity ends, which is where the memo gets saved.'],
+    ['Told when it leaves', 'onClose runs however the activity ends, and says why. That is where the memo gets saved.'],
     ['Buttons go in the details', 'The compact view sits inside a button, so its markup stays plain. Controls belong in the expanded view.'],
   ],
   code: { react: recordReact, vanilla: recordVanilla },

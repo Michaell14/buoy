@@ -536,3 +536,69 @@ describe('labels', () => {
     expect(s.state.current).toMatchObject({ title: 'foto.png ist fertig', action: { label: 'Ansehen' } });
   });
 });
+
+describe('promise results', () => {
+  it('shows a result as a whole message, and gives one with buttons a message’s usual time', async () => {
+    const s = attached();
+    const open = vi.fn();
+    s.promise(Promise.resolve({ name: 'Q3-report.pdf' }), {
+      loading: { title: 'Exporting…', description: 'This can take a minute' },
+      success: (file) => ({
+        title: 'Export ready',
+        description: file.name,
+        icon: 'file',
+        expanded: true,
+        actions: [{ label: 'Open', primary: true, onClick: open }],
+      }),
+    });
+    expect(s.state.current).toMatchObject({ type: 'loading', title: 'Exporting…', description: 'This can take a minute' });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(s.state.current).toMatchObject({ type: 'success', title: 'Export ready', description: 'Q3-report.pdf', icon: 'file', expanded: true, duration: 6000 });
+    expect(s.state.current?.actions?.[0].label).toBe('Open');
+  });
+
+  it('keeps a plain success brief, and lets a duration say otherwise', async () => {
+    const s = attached();
+    s.promise(Promise.resolve(), { success: 'Saved' });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(s.state.current?.duration).toBe(2000);
+    s.dismiss();
+    s.promise(Promise.resolve(), { success: { title: 'Saved', duration: 500 }, successDuration: 9000 });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(s.state.current?.duration).toBe(500);
+    s.dismiss();
+    s.promise(Promise.resolve(), { success: { title: 'Saved', description: 'To drafts' }, successDuration: 9000 });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(s.state.current?.duration).toBe(9000);
+  });
+
+  it('adds Retry to an error unless the error brings its own button', async () => {
+    const s = attached();
+    const retry = vi.fn();
+    s.promise(Promise.reject(new Error('offline')), { error: (e) => ({ title: "Couldn't export", description: (e as Error).message }), retry }).catch(() => {});
+    await vi.advanceTimersByTimeAsync(0);
+    expect(s.state.current).toMatchObject({ type: 'error', title: "Couldn't export", description: 'offline', action: { label: 'Retry' } });
+    s.dismiss();
+    s.promise(Promise.reject(), { error: { title: 'Signed out', action: { label: 'Sign in' } }, retry }).catch(() => {});
+    await vi.advanceTimersByTimeAsync(0);
+    expect(s.state.current?.action?.label).toBe('Sign in');
+  });
+});
+
+describe('replacing a live activity', () => {
+  it('keeps its details open', () => {
+    const s = attached();
+    const draw = () => {};
+    const first = s.live({ id: 'player', label: 'Now playing: Nightswim', render: draw, expandable: true });
+    first.expand();
+    s.live({ id: 'player', label: 'Now playing: Tidewater', render: draw, expandable: true });
+    expect(s.state.current).toMatchObject({ title: 'Now playing: Tidewater', open: true });
+    // One that was closed stays closed, and one that can no longer open closes.
+    first.expand(false);
+    s.live({ id: 'player', label: 'Now playing: Salt Lines', render: draw, expandable: true });
+    expect(s.state.current?.open).toBe(false);
+    first.expand();
+    s.live({ id: 'player', label: 'Stopped', render: draw });
+    expect(s.state.current?.open).toBe(false);
+  });
+});

@@ -52,18 +52,22 @@ export interface MessageOptions {
   onDismiss?: (reason: DismissReason) => void;
 }
 
+/** What a promise shows in one of its states: a title, plus anything else a message can have. */
+export type PromiseMessage = { title: string } & Omit<MessageOptions, 'id'>;
+
 export interface PromiseOptions<T> {
   /**
    * Shows the promise in the message with this id, or gives its message this id. If a newer message
    * takes that id over before the promise settles, the result is dropped rather than replacing it.
    */
   id?: string;
-  loading?: string;
-  success?: string | ((value: T) => string);
-  error?: string | ((error: unknown) => string);
-  /** Adds a Retry button to the error. */
+  /** Each state is a title, or a whole message with a description, an icon or buttons. */
+  loading?: string | PromiseMessage;
+  success?: string | PromiseMessage | ((value: T) => string | PromiseMessage);
+  error?: string | PromiseMessage | ((error: unknown) => string | PromiseMessage);
+  /** Adds a Retry button to the error, unless the error brings an action of its own. */
   retry?: () => void;
-  /** How long the success state holds, in milliseconds. Defaults to 2000. */
+  /** How long the success state holds, in milliseconds. Defaults to 2000, or to a message's usual time when it has buttons. */
   successDuration?: number;
 }
 

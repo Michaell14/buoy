@@ -9,7 +9,7 @@ export default defineConfig([
     entry: { index: 'src/index.ts' },
     format: ['esm', 'cjs'],
     dts: true,
-    external: ['react'],
+    external: ['react', 'react-dom'],
     banner: { js: "'use client';" },
   },
   // Framework-free entry: buoy() + mount().

@@ -11,6 +11,7 @@ import type {
   MessageOptions,
   MessageType,
   Position,
+  PromiseMessage,
   PromiseOptions,
   Resting,
   TaskContext,
@@ -201,9 +202,10 @@ export function createStore() {
   function report(error: unknown) {
     if (typeof console !== 'undefined') console.error(error);
   }
+  /** Everything about the tasks that someone outside can see, as one string to compare. */
+  const print = () => state.tasks.map((t) => [t.id, t.status, t.loaded, t.fraction, t.total, t.attempt, t.error].join()).join('|');
   /** Tells `listener` about the tasks whenever they change, and not when only a message did. */
   function onTasks(listener: (tasks: TaskInfo[]) => void): () => void {
-    const print = () => state.tasks.map((t) => [t.id, t.status, t.loaded, t.fraction, t.total, t.attempt, t.error].join()).join('|');
     let last = print();
     return subscribe(() => {
       const next = print();
@@ -211,6 +213,13 @@ export function createStore() {
       last = next;
       safe(() => listener(state.tasks.map(info)));
     });
+  }
+  /** The tasks as a list that stays the same object until one of them changes, for React to compare. */
+  let snap: { print: string; tasks: TaskInfo[] } = { print: '', tasks: [] };
+  function snapshot(): TaskInfo[] {
+    const now = print();
+    if (now !== snap.print) snap = { print: now, tasks: state.tasks.map(info) };
+    return snap.tasks;
   }
   function buzz() {
     if (!cfg.haptics || typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') return;
@@ -403,6 +412,8 @@ export function createStore() {
 
   function live(o: LiveOptions): LiveHandle {
     const timed = o.duration !== undefined && Number.isFinite(o.duration);
+    const before = o.id ? find(o.id) : null;
+    const wasOpen = !!(before && before.render && before.open);
     const id = push(o.label, {
       id: o.id,
       type: 'live',
@@ -412,6 +423,8 @@ export function createStore() {
       render: o.render,
       expandable: o.expandable,
     });
+    // Replacing an activity whose details were open keeps them open, so a new label doesn't close them.
+    if (wasOpen) setOpen(id, true);
     return { id, refresh: () => refresh(id), expand: (open = true) => setOpen(id, open), close: () => dismiss(id) };
   }
   /** Asks the island to draw a live activity again, without announcing it. */
@@ -435,8 +448,15 @@ export function createStore() {
     m.tapped = true;
     emit();
   }
+  /** A promise state as a title and the rest of its message. */
+  function parts(state: string | PromiseMessage): [string, MessageOptions] {
+    if (typeof state === 'string') return [state, {}];
+    const { title, ...rest } = state;
+    return [title, rest];
+  }
   function promise<T>(input: Promise<T> | (() => Promise<T>), o: PromiseOptions<T> = {}): Promise<T> {
-    const id = push(o.loading ?? cfg.labels.loading, { id: o.id, type: 'loading', duration: Infinity, persist: false });
+    const [loading, shown] = parts(o.loading ?? cfg.labels.loading);
+    const id = push(loading, { ...shown, id: o.id, type: 'loading', duration: Infinity, persist: false });
     // The result goes to this exact message. If another message with the same id has taken it over by
     // then, the result is stale and is dropped; if the message was dismissed, the result shows on its own.
     const mine = find(id);
@@ -453,8 +473,17 @@ export function createStore() {
       else if (m === mine && m.rev === rev) update(m, title, opts);
     };
     p.then(
-      (value) => settle(typeof o.success === 'function' ? o.success(value) : o.success ?? cfg.labels.done, { type: 'success', duration: o.successDuration ?? SUCCESS_MS }),
-      (error) => settle(typeof o.error === 'function' ? o.error(error) : o.error ?? cfg.labels.error, { type: 'error', action: o.retry ? { label: cfg.labels.retry, onClick: o.retry } : undefined }),
+      (value) => {
+        const [title, rest] = parts(typeof o.success === 'function' ? o.success(value) : o.success ?? cfg.labels.done);
+        // A plain success is brief. One with buttons, or one that stays, keeps a message's usual time.
+        const lasting = rest.persist || rest.action || (rest.actions && rest.actions.length);
+        settle(title, { ...rest, type: 'success', duration: rest.duration ?? o.successDuration ?? (lasting ? undefined : SUCCESS_MS) });
+      },
+      (error) => {
+        const [title, rest] = parts(typeof o.error === 'function' ? o.error(error) : o.error ?? cfg.labels.error);
+        const retry = o.retry ? { label: cfg.labels.retry, onClick: o.retry } : undefined;
+        settle(title, { ...rest, type: 'error', action: rest.action ?? retry });
+      },
     );
     return p;
   }
@@ -737,6 +766,7 @@ export function createStore() {
     defaults: { options: DEFAULT_OPTIONS, labels: defaultLabels },
     subscribe,
     onTasks,
+    snapshot,
     configure,
     setPaused,
     push,
