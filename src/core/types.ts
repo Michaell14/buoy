@@ -13,6 +13,12 @@ export type ColorScheme = 'system' | 'light' | 'dark';
 export type MessageType = 'default' | 'success' | 'error' | 'warning' | 'info' | 'loading' | 'live';
 export type Tone = 'accent' | 'success' | 'error' | 'warning' | 'info';
 export type TaskStatus = 'queued' | 'running' | 'paused' | 'failed' | 'done';
+/**
+ * Why a message or live activity left the island: its time ran out (`timeout`), one of its buttons
+ * was pressed (`action`), the person dismissed it with a tap, a swipe, its close button or Esc
+ * (`user`), or your code called `buoy.dismiss()` or `close()` (`code`).
+ */
+export type DismissReason = 'timeout' | 'action' | 'user' | 'code';
 
 /** A built-in icon name, a trusted `<svg>…</svg>` string, or `null` for none. */
 export type IconInput = IconName | (string & {}) | null;
@@ -42,8 +48,12 @@ export interface MessageOptions {
   duration?: number;
   /** Stay until dismissed. Newer messages show first, then this one comes back. Errors persist by default. */
   persist?: boolean;
-  onDismiss?: () => void;
+  /** Called when the message leaves, with the reason. Replacing a message by its id does not count as leaving. */
+  onDismiss?: (reason: DismissReason) => void;
 }
+
+/** What a promise shows in one of its states: a title, plus anything else a message can have. */
+export type PromiseMessage = { title: string } & Omit<MessageOptions, 'id'>;
 
 export interface PromiseOptions<T> {
   /**
@@ -51,12 +61,13 @@ export interface PromiseOptions<T> {
    * takes that id over before the promise settles, the result is dropped rather than replacing it.
    */
   id?: string;
-  loading?: string;
-  success?: string | ((value: T) => string);
-  error?: string | ((error: unknown) => string);
-  /** Adds a Retry button to the error. */
+  /** Each state is a title, or a whole message with a description, an icon or buttons. */
+  loading?: string | PromiseMessage;
+  success?: string | PromiseMessage | ((value: T) => string | PromiseMessage);
+  error?: string | PromiseMessage | ((error: unknown) => string | PromiseMessage);
+  /** Adds a Retry button to the error, unless the error brings an action of its own. */
   retry?: () => void;
-  /** How long the success state holds, in milliseconds. Defaults to 2000. */
+  /** How long the success state holds, in milliseconds. Defaults to 2000, or to a message's usual time when it has buttons. */
   successDuration?: number;
 }
 
@@ -101,17 +112,28 @@ export interface TrackOptions {
   onOpen?: (task: TaskInfo) => void;
 }
 
-export interface TaskHandle {
+export interface TaskHandle<T = unknown> {
   readonly id: string;
+  /**
+   * Resolves with what your function returned, once the task finishes. A failed task can still be
+   * retried, so a failure leaves this waiting. It rejects with an `AbortError` if the task is
+   * canceled, or removed before it finished.
+   */
+  readonly done: Promise<T>;
   pause(): void;
   resume(): void;
   cancel(): void;
   retry(): void;
+  /** Takes the task off the island and out of the tray, whatever state it is in. A task that is still going is canceled. */
+  remove(): void;
 }
 
-/** Text the island writes about tasks. */
+/**
+ * Every piece of text the island writes itself. Pass any of them as `labels` to change the wording
+ * or to translate it. The defaults are English, and make their plurals by adding an "s" to `noun`.
+ */
 export interface Labels {
-  /** Singular noun for one task, such as "upload". Defaults to "task". */
+  /** Singular noun for one task, such as "upload". Defaults to "task". Only the default wording uses it. */
   noun: string;
   /** Label while tasks run. Defaults to the task's label, or "3 tasks". */
   active: (tasks: TaskInfo[]) => string;
@@ -119,6 +141,62 @@ export interface Labels {
   doneOne: (task: TaskInfo) => string;
   /** Message when several tasks finish. */
   doneMany: (count: number) => string;
+  /** The pill when tasks have failed: "2 tasks failed". */
+  failures: (count: number) => string;
+  /** The line under the tray's title: "2 running · 1 queued". */
+  summary: (counts: Record<TaskStatus, number>) => string;
+  /** The tray's warning while tasks run: "Closing this tab stops 2 tasks." */
+  guard: (count: number) => string;
+  /** A task's amount line: "18.2 of 24 MB". A task's own `format` is used instead when it has one. */
+  amount: (loaded: number, total: number) => string;
+  /** A finished task's size: "24 MB". */
+  size: (total: number) => string;
+  /** Time remaining: "5 s left", "2 min left". */
+  timeLeft: (seconds: number) => string;
+  /** A failed task's line: "Connection lost at 12 of 24 MB". */
+  failedAt: (error: string, amount: string) => string;
+  /** What a screen reader hears on something that opens: "Uploading 3 files. Show details". */
+  details: (name: string) => string;
+  /** The tooltip on the +2 badge: "2 waiting". */
+  waiting: (count: number) => string;
+
+  /** Task states, in the tray and on the paused pill. `done` is also a promise's default success. */
+  running: string;
+  queued: string;
+  paused: string;
+  failed: string;
+  done: string;
+  /** Under a task that has not started: "Waiting to start". */
+  notStarted: string;
+  /** Under a finished task that has no `doneLabel`: "Finished". */
+  finished: string;
+
+  /** The tray's title: "Activity". */
+  activity: string;
+  /** Under the title of an empty tray: "Nothing here yet". */
+  nothing: string;
+  /** In an empty tray: "Tasks you start show up here." */
+  empty: string;
+  clearDone: string;
+  pauseAll: string;
+  resumeAll: string;
+  /** For screen readers, on the resting pill when it opens the tray: "Show activity". */
+  showActivity: string;
+
+  /** Buttons. In the tray, a screen reader hears them followed by the task's name: "Cancel photo.png". */
+  retry: string;
+  view: string;
+  open: string;
+  cancel: string;
+  pause: string;
+  resume: string;
+  remove: string;
+  close: string;
+  dismiss: string;
+
+  /** A promise's default messages while it is pending, and when it rejects. */
+  loading: string;
+  error: string;
 }
 
 export interface BuoyOptions {
@@ -142,7 +220,8 @@ export interface BuoyOptions {
   offset?: number | null;
   /** Icon on the live pill while tasks run. Defaults to "upload". */
   taskIcon?: IconInput;
-  labels?: Partial<Labels>;
+  /** Wording to change or translate. Labels you leave out keep their text, and `null` puts every label back to its default. */
+  labels?: Partial<Labels> | null;
 }
 
 /** What a live activity's render function is told about the island. */
@@ -167,8 +246,8 @@ export interface LiveOptions {
   id?: string;
   /** Leaves after this many milliseconds. Without it, the activity stays until you close it. */
   duration?: number;
-  /** Called when the activity leaves, however that happens. */
-  onClose?: () => void;
+  /** Called when the activity leaves, however that happens, with the reason. */
+  onClose?: (reason: DismissReason) => void;
 }
 
 export interface LiveHandle {
@@ -206,12 +285,17 @@ export interface Buoy {
   promise<T>(promise: Promise<T> | (() => Promise<T>), options?: PromiseOptions<T>): Promise<T>;
   /** Dismiss one message by id, or every message when called without one. */
   dismiss(id?: string): void;
-  /** Run a piece of work and show its progress. */
-  track(run: (task: TaskContext) => unknown, options?: TrackOptions): TaskHandle;
+  /** Run a piece of work and show its progress. `await` the handle's `done` to carry on when it finishes. */
+  track<T>(run: (task: TaskContext) => T, options?: TrackOptions): TaskHandle<Awaited<T>>;
   /** Show something ongoing that you draw yourself, such as a timer, a call or a player. It stays until you close it. */
   live(options: LiveOptions): LiveHandle;
   /** A snapshot of all tasks. */
   tasks(): TaskInfo[];
+  /**
+   * Calls `listener` with the tasks whenever one is added, changes state, reports progress or is
+   * removed. Returns a function that stops it. With React, use the `useBuoyTasks()` hook instead.
+   */
+  subscribe(listener: (tasks: TaskInfo[]) => void): () => void;
   tray: { open(): void; close(): void; toggle(): void };
   /** Change options without React. With React, pass props to <Buoy /> instead. */
   configure(options: BuoyOptions): void;

@@ -8,6 +8,7 @@ import { LIVE } from './live';
 import { MESSAGES } from './messages';
 import { PROMISES } from './promises';
 import { TASKS } from './tasks';
+import { WORDING } from './wording';
 
 const $ = <T extends HTMLElement = HTMLElement>(selector: string) => document.querySelector<T>(selector)!;
 const $$ = <T extends HTMLElement = HTMLElement>(selector: string) => Array.from(document.querySelectorAll<T>(selector));
@@ -39,7 +40,7 @@ mount({
 
 /* ───── Examples ───── */
 
-const EXAMPLES: Example[] = [...MESSAGES, ...PROMISES, ...TASKS, ...LIVE];
+const EXAMPLES: Example[] = [...MESSAGES, ...PROMISES, ...TASKS, ...LIVE, ...WORDING];
 const byId = new Map(EXAMPLES.map((example) => [example.id, example]));
 
 const rail = $('#ex-rail');
@@ -69,6 +70,8 @@ function show(example: Example) {
   stop();
   buoy.tray.close();
   buoy.dismiss();
+  // Each example words the island its own way, so every one starts from the defaults.
+  buoy.configure({ labels: null, taskIcon: 'upload' });
 
   current = example;
   const root = document.createElement('div');

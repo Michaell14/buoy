@@ -1,0 +1,28 @@
+import { buoy } from 'buoy-ui/vanilla';
+
+function run() {
+  buoy.promise(exportReport(report), {
+    id: 'export',
+    loading: 'Exporting…',
+    // A result can be a whole message, not only a title.
+    success: (file) => ({
+      title: 'Export ready',
+      description: `${file.name} · ${file.size}`,
+      icon: 'file',
+      expanded: true,
+      // With buttons it stays six seconds instead of two.
+      actions: [
+        { label: 'Open', primary: true, onClick: () => open(file) },
+        { label: 'Show in folder', onClick: () => reveal(file) },
+      ],
+    }),
+    error: (e) => ({
+      title: "Couldn't export",
+      description: e instanceof Error ? e.message : undefined,
+    }),
+    // Still adds Retry, since the error has no button of its own.
+    retry: run,
+  });
+}
+
+document.querySelector('#export').onclick = run;

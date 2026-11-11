@@ -9,25 +9,10 @@ import uploadVanilla from './code/upload.vanilla.txt';
 
 const canceled = () => new DOMException('Canceled', 'AbortError');
 
-/** Ends every task these handles started, whatever state it is in, so the next example starts clean. */
-function clear(handles: Iterable<TaskHandle>) {
-  for (const handle of handles) {
-    // A failed task can only be removed by running it again and canceling that run.
-    handle.retry();
-    handle.cancel();
-  }
-}
-
-/** Mirrors the island's tasks into a component, a few times a second. */
-function watch(draw: (tasks: TaskInfo[]) => void): () => void {
-  const timer = window.setInterval(() => draw(buoy.tasks()), 120);
-  return () => clearInterval(timer);
-}
-
 const megabytes = (bytes: number) => (bytes >= 1e6 ? `${(bytes / 1e6).toFixed(bytes >= 1e7 ? 0 : 1)} MB` : `${Math.max(1, Math.round(bytes / 1e3))} KB`);
 
 /** Pretends to send a file: a few seconds of progress, however big it is. Pauses and cancels like a real one. */
-function pretendUpload(bytes: number) {
+export function pretendUpload(bytes: number) {
   return async (task: TaskContext) => {
     const steps = 55 + Math.random() * 45;
     let sent = 0;
@@ -89,6 +74,7 @@ const upload: Example = {
       }
       // A message while work runs: the island splits, and the uploads carry on in the bubble.
       buoy(files.length === 1 ? 'Added 1 file' : `Added ${files.length} files`, { id: 'upload-added', icon: 'stack', duration: 2200 });
+      draw(buoy.tasks());
     }
 
     const BUTTON: Partial<Record<TaskInfo['status'], readonly [action: string, label: string, icon: string]>> = {
@@ -152,7 +138,6 @@ const upload: Example = {
         if (action === 'resume') handle?.resume();
         if (action === 'cancel') handle?.cancel();
         if (action === 'retry') handle?.retry();
-        draw(buoy.tasks());
       },
     );
 
@@ -174,10 +159,11 @@ const upload: Example = {
       take(event.dataTransfer?.files);
     });
 
-    const unwatch = watch(draw);
+    // The list below mirrors the island's own: every change to a task draws it again.
+    const unsubscribe = buoy.subscribe(draw);
     return () => {
-      unwatch();
-      clear(mine.values());
+      unsubscribe();
+      for (const handle of mine.values()) handle.remove();
     };
   },
 };
@@ -193,13 +179,14 @@ const importCsv: Example = {
   hint: 'The first run stops halfway on purpose. Retry from the island or the button.',
   notes: [
     ['Your units', 'format turns the amount line into rows, files or anything else you count.'],
-    ['Failing is a state', 'Throw and the task is marked failed with your message. The island offers Retry.'],
-    ['Know the attempt', 'task.attempt is 1 on the first run and 2 after a retry, so the work can resume.'],
+    ['Failing is a state', 'Throw and the task is marked failed with your message. A retry runs it again, with task.attempt at 2.'],
+    ['Await the result', 'The handle has a done promise. It resolves with what the work returned, however many tries that took.'],
   ],
   code: { react: importReact, vanilla: importVanilla },
   mount(root) {
     const total = 2480;
-    let job: TaskHandle | null = null;
+    let job: TaskHandle<{ added: number; updated: number }> | null = null;
+    let result: { added: number; updated: number } | null = null;
 
     buoy.configure({
       taskIcon: 'download',
@@ -234,6 +221,7 @@ const importCsv: Example = {
     const current = () => buoy.tasks().find((task) => task.id === job?.id);
 
     function start() {
+      result = null;
       job = buoy.track(
         async (task) => {
           let done = 0;
@@ -245,6 +233,7 @@ const importCsv: Example = {
             if (flaky.checked && task.attempt === 1 && done > total * 0.55) throw new Error('Connection dropped');
             task.progress(done, total);
           }
+          return { added: total - 38, updated: 38 };
         },
         {
           label: 'contacts.csv',
@@ -253,6 +242,14 @@ const importCsv: Example = {
           format: (done, all) => `${rows.format(Math.round(done))} of ${rows.format(all)} rows`,
           doneLabel: 'Imported just now',
         },
+      );
+      // The handle's promise carries on once the import has finished, however many runs it took.
+      job.done.then(
+        (summary) => {
+          result = summary;
+          draw();
+        },
+        () => {},
       );
     }
 
@@ -266,7 +263,9 @@ const importCsv: Example = {
         task?.status === 'failed'
           ? `Stopped at ${count}: ${task.error ?? 'failed'}.`
           : task?.status === 'done'
-            ? `${rows.format(total)} contacts imported.`
+            ? result
+              ? `${rows.format(result.added)} added and ${rows.format(result.updated)} updated.`
+              : `${rows.format(total)} contacts imported.`
             : task?.status === 'paused'
               ? `Paused at ${count}.`
               : active
@@ -277,10 +276,10 @@ const importCsv: Example = {
     }
 
     draw();
-    const unwatch = watch(draw);
+    const unsubscribe = buoy.subscribe(draw);
     return () => {
-      unwatch();
-      if (job) clear([job]);
+      unsubscribe();
+      job?.remove();
     };
   },
 };

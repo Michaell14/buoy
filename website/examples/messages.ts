@@ -208,7 +208,7 @@ const archive: Example = {
   notes: [
     ['Undo on the pill', 'An action turns a message into a way back. Pressing it also dismisses the message.'],
     ['One message for a run', 'A shared id folds each new archive into the same message and restarts its six seconds.'],
-    ['Know when it leaves', 'onDismiss runs when the message goes, which is where the run ends.'],
+    ['Know why it left', 'onDismiss is told the reason: the time ran out, a button was pressed, or it was dismissed.'],
   ],
   code: { react: archiveReact, vanilla: archiveVanilla },
   mount(root) {

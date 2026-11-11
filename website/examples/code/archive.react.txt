@@ -23,10 +23,11 @@ export function Inbox({ threads }: { threads: Thread[] }) {
         onClick: () =>
           setArchived((all) => all.filter((x) => !ids.includes(x))),
       },
-      // Runs when the message leaves: the next archive starts
-      // a new batch.
-      onDismiss: () => {
+      // Runs when the message leaves, and says why. Unless
+      // Undo was pressed, the archive becomes permanent.
+      onDismiss: (reason) => {
         batch.current = [];
+        if (reason !== 'action') archiveOnServer(ids);
       },
     });
   }

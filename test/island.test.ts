@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createIsland } from '../src/core/island';
 import { createStore } from '../src/core/store';
+import type { TaskContext } from '../src/core/types';
 
 const settle = (ms = 60) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -51,6 +52,25 @@ describe('island', () => {
     island.element.querySelector<HTMLButtonElement>('[data-act="action"]')!.click();
     expect(clicked).toBe(1);
     expect(store.state.current).toBeNull();
+    island.destroy();
+  });
+
+  it('tells onDismiss that a button was pressed, before the button runs, or that the person dismissed it', async () => {
+    const store = createStore();
+    const island = createIsland(store);
+    const order: string[] = [];
+    store.push('Conversation archived', {
+      action: { label: 'Undo', onClick: () => order.push('undo') },
+      onDismiss: (reason) => order.push(reason),
+    });
+    await settle();
+    island.element.querySelector<HTMLButtonElement>('[data-act="action"]')!.click();
+    expect(order).toEqual(['action', 'undo']);
+
+    store.push('Link copied', { onDismiss: (reason) => order.push(reason) });
+    await settle();
+    island.element.querySelector<HTMLElement>('.buoy-title')!.click();
+    expect(order).toEqual(['action', 'undo', 'user']);
     island.destroy();
   });
 
@@ -162,6 +182,111 @@ describe('island', () => {
     expect(tray?.textContent).toContain('big-file.zip');
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     expect(store.state.trayOpen).toBe(false);
+    island.destroy();
+  });
+
+  it('takes every piece of its own text from labels', async () => {
+    const store = createStore();
+    const island = createIsland(store);
+    // Replace each label with its own name in guillemets, then look for any text that is not one.
+    const labels: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(store.defaults.labels)) labels[key] = typeof value === 'function' ? () => `«${key}»` : `«${key}»`;
+    // Like the real summary, this one has nothing to say about an empty tray.
+    labels.summary = (counts: Record<string, number>) => (Object.values(counts).some(Boolean) ? '«summary»' : '');
+    store.configure({ labels: labels as never, resting: 'pill' });
+
+    const heard: string[] = [];
+    const read = async () => {
+      await settle();
+      heard.push(island.element.querySelector('.buoy-shell')!.textContent ?? '', island.element.querySelector('.buoy-sr')!.textContent ?? '');
+      island.element.querySelectorAll('[aria-label], [title]').forEach((el) => heard.push(el.getAttribute('aria-label') ?? '', el.getAttribute('title') ?? ''));
+    };
+    const gate = () => {
+      let open!: () => void;
+      let fail!: (error?: unknown) => void;
+      const promise = new Promise<void>((yes, no) => {
+        open = yes;
+        fail = no;
+      });
+      return { promise, open, fail };
+    };
+
+    // Messages and promises.
+    store.push('One', { description: 'Two', expanded: true });
+    await read();
+    store.dismiss();
+    store.push('One');
+    store.push('Two');
+    await read();
+    store.dismiss();
+    const rejected = gate();
+    store.promise(rejected.promise, { retry: () => {} });
+    await read();
+    rejected.fail();
+    await read();
+    store.dismiss();
+    const resolved = gate();
+    store.promise(resolved.promise);
+    resolved.open();
+    await read();
+    store.dismiss();
+
+    // Tasks: two run and one waits, then they pause, fail and finish.
+    const a = gate();
+    const b = gate();
+    const c = gate();
+    let first!: TaskContext;
+    const ta = store.track((task) => { first = task; return a.promise; }, { label: 'a.png', total: 8e6 });
+    const tb = store.track(() => b.promise, { label: 'b.png', total: 8e6 });
+    store.track(() => c.promise, { label: 'c.png' });
+    await read();
+    await settle(80);
+    first.progress(2e6, 8e6);
+    store.openTray();
+    await read();
+    ta.pause();
+    await read();
+    store.pauseAll();
+    await read();
+    store.closeTray();
+    await read();
+    store.resumeAll();
+    b.fail();
+    a.open();
+    c.open();
+    await read();
+    store.openTray();
+    await read();
+    store.closeTray();
+    tb.remove();
+
+    // A batch that finishes cleanly: one task, then two.
+    const d = gate();
+    store.track(() => d.promise, { label: 'd.png', onOpen: () => {} });
+    d.open();
+    await read();
+    store.openTray();
+    await read();
+    store.closeTray();
+    store.dismiss();
+    const e = gate();
+    store.track(() => e.promise, { label: 'a.png' });
+    store.track(() => e.promise, { label: 'b.png' });
+    e.open();
+    await read();
+    store.dismiss();
+    await read();
+    store.clearDone();
+    store.openTray();
+    await read();
+
+    const all = heard.join(' ');
+    const own = all.replace(/«\w+»/g, '');
+    for (const mine of ['a.png', 'b.png', 'c.png', 'd.png', 'One', 'Two']) expect(all).toContain(mine);
+    expect(own.replace(/[abcd]\.png|One|Two/g, '')).not.toMatch(/[A-Za-z]/);
+    // `noun` and `running` only feed the default wording, which this test replaces.
+    const unused = Object.keys(labels).filter((key) => !all.includes(`«${key}»`));
+    expect(unused).toEqual(['noun', 'running']);
     island.destroy();
   });
 });

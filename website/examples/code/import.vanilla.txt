@@ -3,7 +3,7 @@ import { buoy } from 'buoy-ui/vanilla';
 const count = new Intl.NumberFormat();
 let job = null;
 
-function start(file) {
+async function start(file) {
   job = buoy.track(
     async (task) => {
       // 1 on the first run, 2 after a retry: pick up where
@@ -17,6 +17,7 @@ function start(file) {
       }
       // Anything thrown in here marks the task as failed and
       // shows its message.
+      return run.summary;
     },
     {
       label: file.name,
@@ -27,6 +28,14 @@ function start(file) {
       doneLabel: 'Imported just now',
     },
   );
+
+  try {
+    // Resolves with what the work returned, once it has
+    // finished, however many tries that took.
+    showSummary(await job.done);
+  } catch {
+    // Canceled, or removed before it finished.
+  }
 }
 
 // The handle works from your own buttons too.

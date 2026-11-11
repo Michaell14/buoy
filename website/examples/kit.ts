@@ -1,7 +1,7 @@
 // What every example on the page is made of, and the small helpers their components share.
 import { I } from '../live';
 
-export const GROUPS = ['Messages', 'Promises', 'Tasks', 'Live activities'] as const;
+export const GROUPS = ['Messages', 'Promises', 'Tasks', 'Live activities', 'Wording'] as const;
 export type Group = (typeof GROUPS)[number];
 
 export interface Example {

@@ -1,4 +1,5 @@
 import type { Task } from './store';
+import type { Labels } from './types';
 
 export const clamp = (v: number, min: number, max: number): number => Math.min(max, Math.max(min, v));
 
@@ -27,34 +28,36 @@ export function size(total: number): string {
   return `${num(total / d)} ${u}`;
 }
 
-export function eta(t: Task): string {
+/** "5 s left", then "2 min left". */
+export const timeLeft = (seconds: number): string => (seconds < 60 ? `${seconds} s left` : `${Math.round(seconds / 60)} min left`);
+
+export function eta(t: Task, labels: Labels): string {
   if (!(t.rate > 0) || !(t.total > 0)) return '';
-  const s = Math.max(1, Math.round((t.total - t.loaded) / t.rate));
-  return s < 60 ? `${s} s left` : `${Math.round(s / 60)} min left`;
+  return labels.timeLeft(Math.max(1, Math.round((t.total - t.loaded) / t.rate)));
 }
 
 /** Right-hand label on a tray row. */
-export function stateText(t: Task): string {
+export function stateText(t: Task, labels: Labels): string {
   switch (t.status) {
     case 'running': return `${Math.round(frac(t) * 100)}%`;
-    case 'queued': return 'Queued';
-    case 'paused': return 'Paused';
-    case 'failed': return 'Failed';
-    default: return t.total > 0 && !t.format ? size(t.total) : 'Done';
+    case 'queued': return labels.queued;
+    case 'paused': return labels.paused;
+    case 'failed': return labels.failed;
+    default: return t.total > 0 && !t.format ? labels.size(t.total) : labels.done;
   }
 }
 
 /** Second line on a tray row. */
-export function metaText(t: Task): string {
-  const amt = t.total > 0 ? (t.format ? t.format(t.loaded, t.total) : amount(t.loaded, t.total)) : `${Math.round(frac(t) * 100)}%`;
+export function metaText(t: Task, labels: Labels): string {
+  const amt = t.total > 0 ? (t.format ? t.format(t.loaded, t.total) : labels.amount(t.loaded, t.total)) : `${Math.round(frac(t) * 100)}%`;
   switch (t.status) {
     case 'running': {
-      const left = eta(t);
+      const left = eta(t, labels);
       return left ? `${amt} · ${left}` : amt;
     }
-    case 'queued': return 'Waiting to start';
+    case 'queued': return labels.notStarted;
     case 'paused': return amt;
-    case 'failed': return t.total > 0 ? `${t.error} at ${amt}` : t.error;
-    default: return t.doneLabel || 'Finished';
+    case 'failed': return t.total > 0 ? labels.failedAt(t.error, amt) : t.error;
+    default: return t.doneLabel || labels.finished;
   }
 }
