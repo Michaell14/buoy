@@ -602,3 +602,64 @@ describe('replacing a live activity', () => {
     expect(s.state.current?.open).toBe(false);
   });
 });
+
+describe('history', () => {
+  it('keeps nothing until it is turned on', () => {
+    const s = attached();
+    s.push('Saved');
+    vi.advanceTimersByTime(3000);
+    expect(s.state.history).toEqual([]);
+  });
+
+  it('keeps messages that were read, newest first, up to the limit', () => {
+    const s = attached();
+    s.configure({ history: 2 });
+    s.push('One', { type: 'success' });
+    vi.advanceTimersByTime(3000);
+    s.push('Two', { description: 'With more' });
+    s.dismiss(s.state.current!.id, 'user');
+    s.push('Three');
+    vi.advanceTimersByTime(3000);
+    expect(s.state.history.map((p) => [p.title, p.type, p.description])).toEqual([
+      ['Three', 'default', ''],
+      ['Two', 'default', 'With more'],
+    ]);
+  });
+
+  it('leaves out what the app took back, loading states and live activities', () => {
+    const s = attached();
+    s.configure({ history: 5 });
+    const id = s.push('Syncing…', { duration: Infinity });
+    s.dismiss(id);
+    s.promise(new Promise(() => {}), { id: 'p' });
+    s.dismiss('p', 'user');
+    s.live({ label: 'Call', render: () => {} }).close();
+    expect(s.state.history).toEqual([]);
+  });
+
+  it('keeps one entry per id, and trims when the limit drops', () => {
+    const s = attached();
+    s.configure({ history: 5 });
+    for (const [title, id] of [['a', 'x'], ['b', 'y'], ['c', 'x']]) {
+      s.push(title, { id });
+      vi.advanceTimersByTime(3000);
+    }
+    expect(s.state.history.map((p) => p.title)).toEqual(['c', 'b']);
+    s.configure({ history: 1 });
+    expect(s.state.history.map((p) => p.title)).toEqual(['c']);
+  });
+});
+
+describe('countdown', () => {
+  it('tells the island when the timer stops and starts', () => {
+    const s = attached();
+    const events: string[] = [];
+    s.subscribe((event) => events.push(event));
+    s.push('Archived', { countdown: true, action: { label: 'Undo' } });
+    events.length = 0;
+    s.setPaused('hover', true);
+    s.setPaused('hover', false);
+    expect(events).toEqual(['timer', 'timer']);
+    expect(s.state.current?.countdown).toBe(true);
+  });
+});

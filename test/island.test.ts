@@ -279,6 +279,14 @@ describe('island', () => {
     store.clearDone();
     store.openTray();
     await read();
+    store.closeTray();
+
+    // History: a message that timed out shows under Recent.
+    store.configure({ history: 3 });
+    store.push('Two', { duration: 10 });
+    await settle(80);
+    store.openTray();
+    await read();
 
     const all = heard.join(' ');
     const own = all.replace(/«\w+»/g, '');
@@ -287,6 +295,58 @@ describe('island', () => {
     // `noun` and `running` only feed the default wording, which this test replaces.
     const unused = Object.keys(labels).filter((key) => !all.includes(`«${key}»`));
     expect(unused).toEqual(['noun', 'running']);
+    island.destroy();
+  });
+
+  it('draws a countdown ring that shows the time left', async () => {
+    const store = createStore();
+    const island = createIsland(store);
+    store.push('Conversation archived', { countdown: true, duration: 6000, action: { label: 'Undo' } });
+    await settle();
+    const ring = island.element.querySelector<SVGElement>('.buoy-count .val');
+    expect(ring).not.toBeNull();
+    expect(island.element.querySelector('.buoy-row')?.classList.contains('end-count')).toBe(true);
+    // Nearly full: only the first moments have gone.
+    expect(Number(ring!.style.strokeDashoffset)).toBeLessThan(5);
+    store.dismiss();
+    store.push('Link copied', { duration: Infinity, countdown: true });
+    await settle();
+    expect(island.element.querySelector('.buoy-count')).toBeNull();
+    island.destroy();
+  });
+
+  it('draws filled content before measuring, and reads it out', async () => {
+    const store = createStore();
+    const island = createIsland(store);
+    store.push('', {
+      description: ' ',
+      expanded: true,
+      fill: (slot: string, el: HTMLElement) => {
+        el.innerHTML = slot === 'title' ? '<b class="t">Saved</b> Q3' : '<i class="d">to Drafts</i>';
+      },
+    } as never);
+    await settle();
+    expect(island.element.querySelector('.buoy-shell .t')?.textContent).toBe('Saved');
+    expect(island.element.querySelector('.buoy-shell .d')?.textContent).toBe('to Drafts');
+    expect(island.element.querySelector('.buoy-sr')?.textContent).toBe('Saved Q3. to Drafts');
+    island.destroy();
+  });
+
+  it('lists recent messages in the tray, and opens it from the resting pill', async () => {
+    const store = createStore();
+    const island = createIsland(store);
+    store.configure({ history: 3, resting: 'pill' });
+    store.push('Invite sent', { type: 'success', duration: 10 });
+    await settle(80);
+    const rest = island.element.querySelector<HTMLButtonElement>('button.buoy-rest');
+    expect(rest).not.toBeNull();
+    rest!.click();
+    await settle();
+    const tray = island.element.querySelector('.buoy-tray')!;
+    expect(tray.querySelector('.buoy-recent-title')?.textContent).toBe('Recent');
+    expect(tray.querySelector('.buoy-past')?.textContent).toContain('Invite sent');
+    expect(tray.querySelector('.buoy-past')?.textContent).toContain('Just now');
+    expect(tray.querySelector('.buoy-empty')).toBeNull();
     island.destroy();
   });
 });

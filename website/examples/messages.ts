@@ -204,9 +204,9 @@ const archive: Example = {
   title: 'Archive with undo',
   api: 'buoy() with an action',
   blurb: 'A row goes at once, and the island offers the way back. Archive a few in a row and one Undo restores them all.',
-  hint: 'Archive two in a row, then press Undo. Both come back.',
+  hint: 'Archive two in a row, then press Undo. Hover the island to stop the ring.',
   notes: [
-    ['Undo on the pill', 'An action turns a message into a way back. Pressing it also dismisses the message.'],
+    ['Undo on the pill', 'An action turns a message into a way back. countdown: true adds a ring that shows how long is left.'],
     ['One message for a run', 'A shared id folds each new archive into the same message and restarts its six seconds.'],
     ['Know why it left', 'onDismiss is told the reason: the time ran out, a button was pressed, or it was dismissed.'],
   ],
@@ -251,6 +251,7 @@ const archive: Example = {
         draw(at);
         buoy(ids.length === 1 ? 'Conversation archived' : `${ids.length} conversations archived`, {
           id: 'archive',
+          countdown: true,
           action: {
             label: 'Undo',
             onClick: () => {

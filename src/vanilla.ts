@@ -15,6 +15,7 @@ export type {
   MessageAction,
   MessageOptions,
   MessageType,
+  PastMessage,
   MountHandle,
   MountOptions,
   Position,

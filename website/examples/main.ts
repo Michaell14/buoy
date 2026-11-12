@@ -1,5 +1,6 @@
 // The examples page. Like the homepage, it runs the package source, so the island here is the code on main.
 // One example shows at a time: its component and the island share the stage, and its code sits beside it.
+import { shared } from '../../src/core/shared';
 import { buoy, mount } from '../../src/vanilla';
 import type { Theme } from '../../src/vanilla';
 import { selectText, setCode } from '../code';
@@ -32,6 +33,8 @@ mount({
   theme,
   // The empty pill shows where the island lives before an example has said anything.
   resting: 'pill',
+  // Recent messages, in the tray that a tap on the resting pill opens.
+  history: 5,
   offset: 16,
   colorScheme: 'light',
   // The work here is pretend, so leaving the page never asks for confirmation.
@@ -72,6 +75,7 @@ function show(example: Example) {
   buoy.dismiss();
   // Each example words the island its own way, so every one starts from the defaults.
   buoy.configure({ labels: null, taskIcon: 'upload' });
+  shared().store.state.history = [];
 
   current = example;
   const root = document.createElement('div');

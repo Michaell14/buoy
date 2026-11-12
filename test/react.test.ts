@@ -185,3 +185,46 @@ describe('<BuoyLive />', () => {
     await act(async () => root.unmount());
   });
 });
+
+describe('buoy() with React content', () => {
+  beforeEach(() => {
+    buoy.dismiss();
+    shared().store.clearDone();
+  });
+
+  it('draws JSX in the title and description, reads it out, and updates it by id', async () => {
+    const host = document.body.appendChild(document.createElement('div'));
+    const root = createRoot(host);
+    await act(async () => root.render(createElement(Buoy, { expandOnHover: false })));
+    const island = () => document.querySelector<HTMLElement>('.buoy')!;
+    await act(async () => {
+      buoy(createElement(Fragment, null, 'Saved ', createElement('b', { className: 'name' }, 'Q3.pdf')), {
+        id: 'jsx',
+        description: createElement('a', { href: '#drafts', className: 'where' }, 'in Drafts'),
+        expanded: true,
+      });
+      await wait();
+    });
+    await act(async () => wait());
+    expect(island().querySelector('.buoy-shell .name')?.textContent).toBe('Q3.pdf');
+    expect(island().querySelector('.buoy-shell .where')?.getAttribute('href')).toBe('#drafts');
+    expect(island().querySelector('.buoy-sr')?.textContent).toBe('Saved Q3.pdf. in Drafts');
+
+    await act(async () => {
+      buoy.success(createElement('span', { className: 'next' }, 'Published'), { id: 'jsx' });
+      await wait();
+    });
+    await act(async () => wait());
+    expect(island().querySelector('.buoy-shell .next')?.textContent).toBe('Published');
+    expect(shared().store.state.current?.type).toBe('success');
+
+    // Plain strings still take the usual path.
+    await act(async () => {
+      buoy('Link copied', { id: 'jsx' });
+      await wait();
+    });
+    await act(async () => wait());
+    expect(island().querySelector('.buoy-shell .buoy-layer:last-child .buoy-title')?.textContent).toBe('Link copied');
+    await act(async () => root.unmount());
+  });
+});

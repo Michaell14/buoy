@@ -1,11 +1,91 @@
-import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
-import type { ReactNode, ReactPortal } from 'react';
+import { createElement, Fragment, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
+import type { ReactElement, ReactNode, ReactPortal } from 'react';
 import { createPortal, flushSync } from 'react-dom';
+import { buoy as core } from './core/api';
 import { mount } from './core/mount';
 import { shared } from './core/shared';
-import type { BuoyOptions, DismissReason, Labels, LiveHandle, LiveView, MountHandle, MountOptions, TaskInfo } from './core/types';
+import type { NewMessage } from './core/store';
+import type {
+  Buoy as CoreBuoy,
+  BuoyOptions,
+  DismissReason,
+  Labels,
+  LiveHandle,
+  LiveView,
+  MessageOptions,
+  MessageType,
+  MountHandle,
+  MountOptions,
+  TaskInfo,
+} from './core/types';
 
-export { buoy } from './core/api';
+/* ───── Messages with React content ───── */
+
+/** Message options, with React content allowed in the description. */
+export interface BuoyMessageOptions extends Omit<MessageOptions, 'description'> {
+  description?: ReactNode;
+}
+
+/** `buoy()` from the React entry: the same API, and titles and descriptions can be React content. */
+export type BuoyReact = Omit<CoreBuoy, 'success' | 'error' | 'warn' | 'info'> & {
+  (title: ReactNode, options?: BuoyMessageOptions): string;
+  success(title: ReactNode, options?: BuoyMessageOptions): string;
+  error(title: ReactNode, options?: BuoyMessageOptions): string;
+  warn(title: ReactNode, options?: BuoyMessageOptions): string;
+  info(title: ReactNode, options?: BuoyMessageOptions): string;
+};
+
+/** The React content of each message that has some, by message id. */
+const content = new Map<string, { title: ReactNode; description: ReactNode }>();
+/** Draws React content into the island. The mounted <Buoy /> provides it. */
+let host: ((el: HTMLElement, node: ReactNode) => void) | null = null;
+let made = 0;
+
+const asText = (node: ReactNode): string | null => (typeof node === 'string' || typeof node === 'number' ? String(node) : null);
+const absent = (node: ReactNode) => node === undefined || node === null || node === false || node === '';
+
+function show(type: MessageType | undefined, title: ReactNode, options: BuoyMessageOptions = {}): string {
+  const { store } = shared();
+  const text = asText(title);
+  const description = absent(options.description) ? undefined : asText(options.description);
+  // Plain text takes the usual path, which also works without React on the page.
+  if (text !== null && (absent(options.description) || description !== null)) {
+    if (options.id) content.delete(options.id);
+    return store.push(text, { ...options, description: description ?? undefined, type } as NewMessage);
+  }
+  const id = options.id ?? `buoy-react-${++made}`;
+  content.set(id, { title, description: options.description });
+  const { onDismiss } = options;
+  return store.push(text ?? '', {
+    ...options,
+    id,
+    type,
+    // The island needs to know there is a description, so it opens on hover or tap.
+    description: absent(options.description) ? undefined : (description ?? ' '),
+    fill: (slot, el) => {
+      const node = content.get(id)?.[slot];
+      if (host) host(el, node);
+      else el.textContent = asText(node ?? null) ?? '';
+    },
+    onDismiss: (reason) => {
+      content.delete(id);
+      onDismiss?.(reason);
+    },
+  } as NewMessage);
+}
+
+/**
+ * Shows messages, promises and background work in the island. From the React entry, a message's
+ * title and description can be React content, such as `buoy(<>Saved <b>{name}</b></>)`, drawn by the
+ * mounted `<Buoy />`. Everything else is the same as `buoy` from `buoy-ui/vanilla`.
+ */
+export const buoy: BuoyReact = Object.assign((title: ReactNode, options?: BuoyMessageOptions) => show(undefined, title, options), core, {
+  success: (title: ReactNode, options?: BuoyMessageOptions) => show('success', title, options),
+  error: (title: ReactNode, options?: BuoyMessageOptions) => show('error', title, options),
+  warn: (title: ReactNode, options?: BuoyMessageOptions) => show('warning', title, options),
+  info: (title: ReactNode, options?: BuoyMessageOptions) => show('info', title, options),
+});
+
 export type {
   Buoy as BuoyApi,
   BuoyOptions,
@@ -20,6 +100,7 @@ export type {
   MessageAction,
   MessageOptions,
   MessageType,
+  PastMessage,
   Position,
   PromiseMessage,
   PromiseOptions,
@@ -39,7 +120,7 @@ export type BuoyProps = Omit<MountOptions, keyof BuoyOptions> & BuoyOptions;
  * Renders the island. Put it once near the root of your app, then call `buoy()` from anywhere.
  * It renders nothing in React's tree: the island lives in its own element at the end of <body>.
  */
-export function Buoy(props: BuoyProps): null {
+export function Buoy(props: BuoyProps): ReactElement {
   const { container, injectStyles, nonce, labels, ...options } = props;
   const handle = useRef<MountHandle | null>(null);
   // Label functions are read through refs, so inline arrow functions don't reconfigure on every render.
@@ -62,7 +143,7 @@ export function Buoy(props: BuoyProps): null {
 
   const { store } = shared();
   const defaults = store.defaults;
-  const { theme, position, resting, richColors, expandOnHover, duration, concurrency, guard, haptics, colorScheme, offset, taskIcon } = options;
+  const { theme, position, resting, richColors, expandOnHover, duration, concurrency, guard, haptics, colorScheme, offset, taskIcon, history } = options;
 
   useEffect(() => {
     const d = defaults.options;
@@ -93,11 +174,32 @@ export function Buoy(props: BuoyProps): null {
       colorScheme: colorScheme ?? d.colorScheme,
       offset: offset ?? d.offset,
       taskIcon: taskIcon ?? d.taskIcon,
+      history: history ?? d.history,
       labels: next as unknown as Labels,
     });
-  }, [store, defaults, theme, position, resting, richColors, expandOnHover, duration, concurrency, guard, haptics, colorScheme, offset, taskIcon, wording]);
+  }, [store, defaults, theme, position, resting, richColors, expandOnHover, duration, concurrency, guard, haptics, colorScheme, offset, taskIcon, history, wording]);
 
-  return null;
+  // React content in messages: the island hands over an element, and this draws into it at once,
+  // since the island measures the content as soon as it is drawn.
+  const [portals, setPortals] = useState<Array<{ el: HTMLElement; node: ReactNode; key: number }>>([]);
+  const latest = useRef(portals);
+  latest.current = portals;
+  useEffect(() => {
+    let keys = 0;
+    const draw = (el: HTMLElement, node: ReactNode) =>
+      flushSync(() => setPortals((list) => [...list.filter((p) => p.el !== el && p.el.isConnected), { el, node, key: ++keys }]));
+    host = draw;
+    // Let go of content whose message has left the island.
+    const stop = store.subscribe(() => {
+      if (latest.current.some((p) => !p.el.isConnected)) setPortals((list) => list.filter((p) => p.el.isConnected));
+    });
+    return () => {
+      stop();
+      if (host === draw) host = null;
+    };
+  }, [store]);
+
+  return createElement(Fragment, null, ...portals.map((p) => createPortal(p.node, p.el, String(p.key))));
 }
 
 const NO_TASKS: TaskInfo[] = [];

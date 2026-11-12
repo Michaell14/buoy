@@ -58,6 +58,8 @@ const de: Partial<Labels> = {
   dismiss: 'Schließen',
   loading: 'Lädt…',
   error: 'Etwas ist schiefgelaufen',
+  recent: 'Zuletzt',
+  ago: (seconds) => (seconds < 60 ? 'Gerade eben' : seconds < 3600 ? `vor ${Math.floor(seconds / 60)} min` : `vor ${Math.floor(seconds / 3600)} h`),
 };
 
 const esMb = megabytes('es');
@@ -99,6 +101,8 @@ const es: Partial<Labels> = {
   dismiss: 'Descartar',
   loading: 'Cargando…',
   error: 'Algo salió mal',
+  recent: 'Recientes',
+  ago: (seconds) => (seconds < 60 ? 'Ahora mismo' : seconds < 3600 ? `hace ${Math.floor(seconds / 60)} min` : `hace ${Math.floor(seconds / 3600)} h`),
 };
 
 // English only rewords the task lines for uploads. Everything else is the island's default.
