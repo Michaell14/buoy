@@ -48,6 +48,8 @@ export const css = [
   ':where(.buoy) *,:where(.buoy) *::before,:where(.buoy) *::after{box-sizing:border-box}',
   ':where(.buoy) button{margin:0;font:inherit;color:inherit;letter-spacing:inherit;text-transform:none;-webkit-appearance:none;appearance:none}',
   '.buoy [hidden]{display:none!important}',
+  // Links in a message's content take the island's colors, underlined so they read as links.
+  ':where(.buoy) a{color:inherit;text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px}',
 
   /* Geometry layers */
   `${NOTCH}{top:env(safe-area-inset-top,0px)}`,
@@ -89,6 +91,8 @@ export const css = [
   '.buoy-row.end-action{padding-right:6px}',
   '.buoy-row.end-ring{padding-right:8px}',
   '.buoy-row.end-badge{padding-right:10px}',
+  '.buoy-row.end-count{padding-right:12px}',
+  '.buoy-count{width:22px;height:22px;margin-left:2px}',
   'button.buoy-row{border:0;background:none;cursor:pointer;text-align:left}',
   '.buoy-ic{width:32px;height:32px;flex:none;border-radius:999px;background:var(--a-chip);color:var(--a-fg);display:grid;place-items:center}',
   '.buoy-ic svg{width:18px;height:18px}',
@@ -171,6 +175,11 @@ export const css = [
   '.buoy-tray-foot>svg{width:16px;height:16px;flex:none}',
   '.buoy-tray-foot>span{flex:1}',
   '.buoy-empty{margin:0;padding:14px;font-size:13px;color:var(--a-fg2)}',
+  '.buoy-recent{display:flex;flex-direction:column;gap:4px;padding-top:6px}',
+  '.buoy-recent-title{padding:2px 14px;font-size:12px;font-weight:600;color:var(--a-fg2)}',
+  '.buoy-past-list{max-height:min(32vh,260px)}',
+  '.buoy-past{display:flex;align-items:center;gap:12px;padding:8px 14px 8px 10px;border-radius:20px}',
+  '.buoy-past .buoy-task-main{gap:3px}',
 
   /* Focus */
   '.buoy button:focus-visible{outline:none}',

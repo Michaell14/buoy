@@ -12,7 +12,7 @@ Messages, loading states and upload progress share one surface at the top of the
 - **Promises on the same shape.** Loading turns into success or error in place.
 - **Real progress.** Track uploads or any long job: a live ring, then a tray with pause, resume, retry and cancel.
 - **Four looks.** Ink, Frost, Paper, and Notch, which hangs from the top edge of the viewport.
-- **Small and dependency-free.** About 17 KB gzipped including styles. Styles inject themselves.
+- **Small and dependency-free.** About 18 KB gzipped including styles. Styles inject themselves.
 - **Accessible.** Real buttons, a polite live region, Esc to close, and `prefers-reduced-motion` support.
 - **Any language.** Every word the island writes is a label you can replace.
 
@@ -97,6 +97,7 @@ buoy.dismiss(); // everything
 | `expanded` | `boolean` | Open the expanded layout straight away |
 | `duration` | `number` (ms) | Defaults to 3000, or 6000 with buttons. `Infinity` keeps it |
 | `persist` | `boolean` | Stay until dismissed. Errors persist by default |
+| `countdown` | `boolean` | Show the time left as a ring at the end of the pill. It stops while hovered |
 | `id` | `string` | Update an existing message |
 | `onDismiss` | `(reason) => void` | Called when it leaves, with the reason |
 
@@ -108,6 +109,32 @@ buoy('Conversation archived', {
   onDismiss: (reason) => {
     if (reason !== 'action') archiveOnServer();
   },
+});
+```
+
+An undo is the usual place for a countdown. The ring shows how long is left, and hovering stops it:
+
+```ts
+buoy('Conversation archived', { action: { label: 'Undo', onClick: restore }, countdown: true });
+```
+
+### Recent messages
+
+Messages leave after a few seconds. Pass `history` to keep the last few and list them in the tray, under any tasks, so people can catch what they missed. With `resting="pill"`, a tap on the resting island opens it.
+
+```tsx
+<Buoy history={5} resting="pill" />
+```
+
+The history keeps messages that timed out or were dismissed by the person, and leaves out what your code dismissed, loading states and live activities.
+
+### React content in messages
+
+From the `buoy-ui` entry, a title or description can be React content: emphasis, a link, a component. The mounted `<Buoy />` draws it, and screen readers hear its text.
+
+```tsx
+buoy.success(<>Saved <b>{file.name}</b></>, {
+  description: <a href="/drafts">Show in Drafts</a>,
 });
 ```
 
@@ -316,6 +343,7 @@ Pass these as props to `<Buoy />`, or to `mount()` and `buoy.configure()` withou
 | `haptics` | `boolean` | `false` | Short vibration where the device supports it |
 | `offset` | `number` | `12` | Distance from the screen edge in px |
 | `taskIcon` | icon | `'upload'` | Icon on the live pill |
+| `history` | `number` | `0` | Keep this many recent messages and list them in the tray. See [Recent messages](#recent-messages) |
 | `labels` | `Partial<Labels>` | English | The island's own wording. See [Wording and other languages](#wording-and-other-languages) |
 | `injectStyles` | `boolean` | `true` | Set to `false` if you import `buoy-ui/styles.css` yourself |
 | `nonce` | `string` | | Nonce for the injected `<style>` under a strict CSP |
@@ -385,6 +413,7 @@ The [language example](https://buoy-ui.vercel.app/examples#language) has a compl
 | `details(name)` | "Uploading 3 files. Show details" | Screen readers, on anything that opens |
 | `waiting(count)` | "2 waiting" | Tooltip on the `+2` badge |
 | `showActivity` | "Show activity" | Screen readers, on the resting pill |
+| `recent`, `ago(seconds)` | "Recent", "Just now", "4 min ago" | The tray's history, with the `history` option |
 
 ## Theming
 

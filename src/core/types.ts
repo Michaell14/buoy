@@ -48,6 +48,8 @@ export interface MessageOptions {
   duration?: number;
   /** Stay until dismissed. Newer messages show first, then this one comes back. Errors persist by default. */
   persist?: boolean;
+  /** Shows the time left as a ring at the end of the pill. It stops while the message is hovered. Only for a message with a finite duration. */
+  countdown?: boolean;
   /** Called when the message leaves, with the reason. Replacing a message by its id does not count as leaving. */
   onDismiss?: (reason: DismissReason) => void;
 }
@@ -166,6 +168,10 @@ export interface Labels {
   paused: string;
   failed: string;
   done: string;
+  /** The title over recent messages in the tray: "Recent". */
+  recent: string;
+  /** How long ago a recent message left: "Just now", "4 min ago". */
+  ago: (seconds: number) => string;
   /** Under a task that has not started: "Waiting to start". */
   notStarted: string;
   /** Under a finished task that has no `doneLabel`: "Finished". */
@@ -220,6 +226,11 @@ export interface BuoyOptions {
   offset?: number | null;
   /** Icon on the live pill while tasks run. Defaults to "upload". */
   taskIcon?: IconInput;
+  /**
+   * Keeps this many recent messages and lists them in the tray, under any tasks, so people can catch
+   * what they missed. Defaults to 0, none. With `resting: 'pill'`, a tap on the resting pill opens it.
+   */
+  history?: number;
   /** Wording to change or translate. Labels you leave out keep their text, and `null` puts every label back to its default. */
   labels?: Partial<Labels> | null;
 }
@@ -228,6 +239,16 @@ export interface BuoyOptions {
 export interface LiveView {
   /** True while the island is open on the activity's details. */
   readonly expanded: boolean;
+}
+
+/** A message that has left, as the tray's history keeps it. */
+export interface PastMessage {
+  id: string;
+  type: MessageType;
+  title: string;
+  description: string;
+  /** When it left, in milliseconds since 1970. */
+  at: number;
 }
 
 export interface LiveOptions {

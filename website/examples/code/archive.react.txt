@@ -18,6 +18,8 @@ export function Inbox({ threads }: { threads: Thread[] }) {
       // The same id folds each archive into one message and
       // restarts its six seconds.
       id: 'archive',
+      // A ring that shows the time left to undo.
+      countdown: true,
       action: {
         label: 'Undo',
         onClick: () =>

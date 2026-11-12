@@ -1,6 +1,6 @@
 import { esc, frac, metaText, stateText } from './format';
 import { iconHTML, ringHTML, setRing, spinnerHTML } from './icons';
-import type { Msg, Store, Task } from './store';
+import type { Msg, Past, Store, Task } from './store';
 
 type Spr = readonly [stiffness: number, damping: number];
 const SPR = {
@@ -13,6 +13,8 @@ const SPR = {
 } as const satisfies Record<string, Spr>;
 
 const BUBBLE = 44;
+/** The countdown ring's circumference: radius 10.5. */
+const COUNT = 2 * Math.PI * 10.5;
 const GAP = 8;
 const TYPE_ICON: Record<string, string> = { success: 'check', error: 'error', warning: 'warning', info: 'info' };
 const TYPE_TONE: Record<string, string> = { success: 'success', error: 'error', warning: 'warn', info: 'info' };
@@ -193,6 +195,12 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
   const hasDetails = (m: Msg) => !!(m.description || (m.actions && m.actions.length));
   let hoverExpand = false;
 
+  /** A title or description: escaped text, or an empty slot for a message whose content is drawn by `fill`. */
+  const part = (m: Msg, slot: 'title' | 'description', cls: string, text: string) =>
+    m.fill ? `<span class="${cls}" data-slot="${slot}" data-rev="${m.rev}"></span>` : `<span class="${cls}">${esc(text)}</span>`;
+  /** Whether a message shows a countdown ring right now. */
+  const counting = (m: Msg) => m.countdown && Number.isFinite(m.duration) && m.type !== 'loading';
+
   function msgView(m: Msg): View {
     if (m.render) return customView(m);
     const expanded = hasDetails(m) && (m.expanded || m.tapped || (hoverExpand && cfg.expandOnHover));
@@ -205,15 +213,18 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
         .join('');
       html =
         `<div class="buoy-exp"><div class="buoy-exp-head"><span class="buoy-tile" data-tone="${tone}">${icon || iconHTML('info')}</span>` +
-        `<div class="buoy-exp-text"><span class="buoy-exp-title">${esc(m.title)}</span>${m.description ? `<span class="buoy-exp-desc">${esc(m.description)}</span>` : ''}</div>` +
+        `<div class="buoy-exp-text">${part(m, 'title', 'buoy-exp-title', m.title)}${m.description ? part(m, 'description', 'buoy-exp-desc', m.description) : ''}</div>` +
         `<button type="button" class="buoy-x" data-act="dismiss" data-fk="x" aria-label="${esc(L.dismiss)}">${iconHTML('x')}</button></div>` +
         `${actions ? `<div class="buoy-actions">${actions}</div>` : ''}</div>`;
     } else {
       const waiting = state.queue.length;
       const action = m.action ? `<button type="button" class="buoy-act" data-act="action" data-i="-1" data-fk="a-1"><span>${esc(m.action.label)}</span></button>` : '';
       const badge = !action && waiting ? `<span class="buoy-badge" title="${esc(L.waiting(waiting))}">+${waiting}</span>` : '';
-      const cls = `buoy-row${icon ? '' : ' no-icon'}${action ? ' end-action' : badge ? ' end-badge' : ''}`;
-      html = `<div class="${cls}">${icon ? `<span class="buoy-ic" data-tone="${tone}">${icon}</span>` : ''}<span class="buoy-title">${esc(m.title)}</span>${badge}${action}</div>`;
+      const count = counting(m)
+        ? `<svg class="buoy-ring buoy-count" viewBox="0 0 28 28" aria-hidden="true" focusable="false"><circle class="trk" cx="14" cy="14" r="10.5"/><circle class="val" cx="14" cy="14" r="10.5" style="stroke-dasharray:${COUNT.toFixed(2)}"/></svg>`
+        : '';
+      const cls = `buoy-row${icon ? '' : ' no-icon'}${count ? ' end-count' : action ? ' end-action' : badge ? ' end-badge' : ''}`;
+      html = `<div class="${cls}">${icon ? `<span class="buoy-ic" data-tone="${tone}">${icon}</span>` : ''}${part(m, 'title', 'buoy-title', m.title)}${badge}${action}${count}</div>`;
     }
     return {
       kind: 'msg',
@@ -293,7 +304,7 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
   }
 
   function restView(): View {
-    const html = state.tasks.length
+    const html = state.tasks.length || state.history.length
       ? `<button type="button" class="buoy-rest" data-act="open-tray" data-fk="rest" aria-label="${esc(L.showActivity)}"></button>`
       : '<div class="buoy-rest"></div>';
     return { kind: 'rest', key: 'rest', sig: html, html, type: '', expanded: false, radius: 15, spring: SPR.resize };
@@ -317,15 +328,32 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
     );
   }
 
+  const PAST_ICON: Record<string, string> = { success: 'check', error: 'error', warning: 'warning', info: 'info' };
+  const ago = (p: Past) => L.ago(Math.max(0, Math.round((Date.now() - p.at) / 1000)));
+  function pastHTML(p: Past): string {
+    const tone = TYPE_TONE[p.type] || USER_TONE[p.tone] || '';
+    const icon = iconHTML(p.icon === undefined ? PAST_ICON[p.type] : p.icon) || iconHTML('bell');
+    return (
+      `<li class="buoy-past"><span class="buoy-tile sm" data-tone="${tone}">${icon}</span><div class="buoy-task-main">` +
+      `<div class="buoy-task-top"><span class="buoy-task-name">${esc(p.title)}</span><span class="buoy-task-state" data-at="${p.at}">${esc(ago(p))}</span></div>` +
+      `${p.description ? `<span class="buoy-task-meta">${esc(p.description)}</span>` : ''}</div></li>`
+    );
+  }
+
   function trayView(): View {
+    const past = state.history;
     const { counts, text } = store.summary();
     const running = counts.running + counts.queued + counts.paused;
     const bottom = cfg.position === 'bottom';
     const clear = counts.done ? `<button type="button" class="buoy-act" data-act="clear-done" data-fk="clear"><span>${esc(L.clearDone)}</span></button>` : '';
     const head =
-      `<div class="buoy-tray-head"><div class="buoy-tray-titles"><span class="buoy-tray-title">${esc(L.activity)}</span><span class="buoy-tray-sub">${esc(text || L.nothing)}</span></div>` +
+      `<div class="buoy-tray-head"><div class="buoy-tray-titles"><span class="buoy-tray-title">${esc(L.activity)}</span><span class="buoy-tray-sub">${esc(text || (past.length ? '' : L.nothing))}</span></div>` +
       `<div class="buoy-tray-tools">${clear}<button type="button" class="buoy-ib" data-act="close-tray" data-fk="close" aria-label="${esc(L.close)}"><span>${iconHTML(bottom ? 'down' : 'up')}</span></button></div></div>`;
-    const list = state.tasks.length ? `<ul class="buoy-list">${state.tasks.map(rowHTML).join('')}</ul>` : `<p class="buoy-empty">${esc(L.empty)}</p>`;
+    const recent = past.length
+      ? `<div class="buoy-recent"><span class="buoy-recent-title">${esc(L.recent)}</span><ul class="buoy-list buoy-past-list">${past.map(pastHTML).join('')}</ul></div>`
+      : '';
+    const tasks = state.tasks.length ? `<ul class="buoy-list">${state.tasks.map(rowHTML).join('')}</ul>` : past.length ? '' : `<p class="buoy-empty">${esc(L.empty)}</p>`;
+    const list = tasks + recent;
     let foot = '';
     if (cfg.guard && running) {
       const all = counts.running
@@ -336,7 +364,7 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
       foot = `<div class="buoy-tray-foot">${iconHTML('info')}<span>${esc(L.guard(running))}</span>${all}</div>`;
     }
     const html = `<div class="buoy-tray" role="dialog" aria-label="${esc(L.activity)}">${head}${list}${foot}</div>`;
-    const sig = ['tray', state.wording, bottom, cfg.guard, running, counts.running > 0, counts.paused > 0, counts.done > 0, state.tasks.map((t) => t.id + t.status).join(',')].join('|');
+    const sig = ['tray', state.wording, bottom, cfg.guard, running, counts.running > 0, counts.paused > 0, counts.done > 0, state.tasks.map((t) => t.id + t.status).join(','), past.map((p) => p.id + p.at).join(',')].join('|');
     const patch = (el: HTMLElement) => {
       for (const t of state.tasks) {
         const row = el.querySelector(`.buoy-task[data-id="${t.id}"]`);
@@ -349,7 +377,11 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
         if (meta) meta.textContent = metaText(t, L);
       }
       const sub = el.querySelector('.buoy-tray-sub');
-      if (sub) sub.textContent = text || L.nothing;
+      if (sub) sub.textContent = text || (past.length ? '' : L.nothing);
+      for (const p of past) {
+        const when = el.querySelector(`[data-at="${p.at}"]`);
+        if (when) when.textContent = ago(p);
+      }
     };
     return { kind: 'tray', key: 'tray', sig, html, type: '', expanded: false, radius: 30, spring: SPR.tray, patch };
   }
@@ -402,9 +434,13 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
     const base = (key: string) => key.slice(0, key.lastIndexOf(':'));
     const toggling = !!view && view.type === 'live' && next.type === 'live' && view.expanded !== next.expanded && base(view.key) === base(next.key);
     const focusInside = !!layer && layer.contains(doc.activeElement);
+    let built = true;
     if (!view || !layer || view.key !== next.key) swap(next);
     else if (view.sig !== next.sig) rebuild(next);
+    else built = false;
+    if (built && layer && next.kind === 'msg' && state.current) fillSlots(layer, state.current);
     if (next.patch && layer) next.patch(layer);
+    if (layer && next.kind === 'msg' && state.current) countdown(layer, state.current);
     if (toggling && focusInside && layer) {
       const target = layer.querySelector<HTMLElement>('[data-fk="live-x"], [data-fk="live-c"]');
       if (target) target.focus({ preventScroll: true });
@@ -419,6 +455,44 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
     to('r', next.radius == null ? h / 2 : next.radius, spr);
     setBubble(withBubble, running);
     shell.style.cursor = next.kind === 'msg' && !next.expanded && state.current && state.current.type !== 'loading' && state.current.type !== 'live' ? 'pointer' : '';
+  }
+
+  /** Draws a message's content into its empty slots, and keeps a plain-text copy for screen readers. */
+  function fillSlots(el: HTMLElement, m: Msg) {
+    if (!m.fill) return;
+    for (const slot of Array.from(el.querySelectorAll<HTMLElement>('[data-slot]'))) {
+      const name = slot.getAttribute('data-slot') === 'description' ? 'description' : 'title';
+      try {
+        m.fill(name, slot);
+      } catch (error) {
+        if (typeof console !== 'undefined') console.error(error);
+      }
+      const text = (slot.textContent || '').replace(/\s+/g, ' ').trim();
+      if (name === 'title') m.plainTitle = text;
+      else m.plainDescription = text;
+    }
+  }
+
+  // The countdown ring runs on its own animation, moved to the timer's time left whenever the timer
+  // starts, stops or changes. Without the Web Animations API it shows where the timer stood.
+  const countAnims = new WeakMap<Element, Animation>();
+  function countdown(el: HTMLElement, m: Msg) {
+    const val = el.querySelector<SVGElement>('.buoy-count .val');
+    if (!val) return;
+    const total = m.duration;
+    const left = Math.max(0, Math.min(total, m.timer ? m.deadline - Date.now() : m.remaining));
+    if (!canAnimate) {
+      val.style.strokeDashoffset = (COUNT * (1 - left / total)).toFixed(2);
+      return;
+    }
+    let anim = countAnims.get(val);
+    if (!anim) {
+      anim = val.animate([{ strokeDashoffset: 0 }, { strokeDashoffset: COUNT }], { duration: total, easing: 'linear', fill: 'forwards' });
+      countAnims.set(val, anim);
+    }
+    anim.currentTime = total - left;
+    if (m.timer) anim.play();
+    else anim.pause();
   }
 
   function swap(next: View) {
@@ -559,10 +633,10 @@ export function createIsland(store: Store, options: IslandOptions = {}): Island 
   }
 
   function announce(m: Msg) {
-    const text = [m.title, m.description].filter(Boolean).join('. ');
     sr.textContent = '';
+    // A filled message's text is only known once it is drawn, which happens before this runs.
     win.setTimeout(() => {
-      sr.textContent = text;
+      sr.textContent = [m.plainTitle || m.title, m.plainDescription || m.description.trim()].filter(Boolean).join('. ');
     }, 40);
   }
 

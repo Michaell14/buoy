@@ -10,6 +10,7 @@ import type {
   MessageAction,
   MessageOptions,
   MessageType,
+  PastMessage,
   Position,
   PromiseMessage,
   PromiseOptions,
@@ -47,6 +48,20 @@ export interface Msg {
   open: boolean;
   /** Bumped whenever a live activity needs drawing again. */
   rev: number;
+  countdown: boolean;
+  /**
+   * Draws the title or description into an element, in place of the text. The React entry uses it to
+   * put JSX in a message. The island calls it whenever it builds the message's markup.
+   */
+  fill: ((slot: 'title' | 'description', el: HTMLElement) => void) | null;
+  /** What a filled title and description read as, for screen readers and the history. Set by the island. */
+  plainTitle: string;
+  plainDescription: string;
+}
+
+export interface Past extends PastMessage {
+  icon: string | null | undefined;
+  tone: string;
 }
 
 export interface Task {
@@ -90,12 +105,14 @@ export interface ResolvedOptions {
   colorScheme: ColorScheme;
   offset: number | null;
   taskIcon: string;
+  history: number;
   labels: Labels;
 }
 
-export type StoreEvent = 'change' | 'progress' | 'config' | 'show';
+/** `timer` means the visible message's timer started, stopped or changed its time left. */
+export type StoreEvent = 'change' | 'progress' | 'config' | 'show' | 'timer';
 export type StoreListener = (event: StoreEvent, message?: Msg) => void;
-type NewMessage = MessageOptions & { type?: MessageType; render?: Msg['render']; expandable?: boolean };
+export type NewMessage = MessageOptions & { type?: MessageType; render?: Msg['render']; expandable?: boolean; fill?: Msg['fill'] };
 
 /** How long a message stays when others are waiting behind it. */
 const HURRY_MS = 1500;
@@ -123,6 +140,7 @@ export const DEFAULT_OPTIONS: Omit<ResolvedOptions, 'labels'> = {
   colorScheme: 'system',
   offset: null,
   taskIcon: 'upload',
+  history: 0,
 };
 
 export type Store = ReturnType<typeof createStore>;
@@ -169,6 +187,8 @@ export function createStore() {
     dismiss: 'Dismiss',
     loading: 'Loading…',
     error: 'Something went wrong',
+    recent: 'Recent',
+    ago: (seconds) => (seconds < 60 ? 'Just now' : seconds < 3600 ? `${Math.floor(seconds / 60)} min ago` : `${Math.floor(seconds / 3600)} h ago`),
   };
   const cfg: ResolvedOptions = { ...DEFAULT_OPTIONS, labels: { ...defaultLabels } };
   const state = {
@@ -181,6 +201,8 @@ export function createStore() {
     batchAnnounced: false,
     /** Increments when the labels change, so views that are open pick up the new wording. */
     wording: 0,
+    /** Messages that left, newest first. Kept only when the `history` option is above 0. */
+    history: [] as Past[],
     /** Increments on every change. Handy for snapshot caching. */
     version: 0,
   };
@@ -247,6 +269,7 @@ export function createStore() {
     }
     if (!changed) return;
     if (rest.concurrency !== undefined) pump();
+    if (state.history.length > cfg.history) state.history = state.history.slice(0, Math.max(0, cfg.history));
     emit('config');
   }
 
@@ -270,8 +293,11 @@ export function createStore() {
   function syncTimers() {
     const m = state.current;
     if (!m) return;
+    const running = !!m.timer;
     if (isPaused()) pauseTimer(m);
     else startTimer(m);
+    // A countdown ring follows the timer, so say when it stops or starts.
+    if (running !== !!m.timer) emit('timer');
   }
   /** Pause or resume message timers for a reason, e.g. "hover" or "hidden". */
   function setPaused(reason: string, on: boolean) {
@@ -310,6 +336,10 @@ export function createStore() {
       expandable: !!o.expandable,
       open: false,
       rev: 0,
+      countdown: !!o.countdown,
+      fill: o.fill ?? null,
+      plainTitle: '',
+      plainDescription: '',
     };
   }
   function find(id: string): Msg | null {
@@ -335,6 +365,7 @@ export function createStore() {
     pauseTimer(m);
     m.remaining = target;
     startTimer(m);
+    emit('timer');
   }
   function push(title: string, o: NewMessage = {}): string {
     if (o.id) {
@@ -373,6 +404,7 @@ export function createStore() {
   function dismiss(id?: string, reason: DismissReason = 'code') {
     const cur = state.current;
     const tell = (m: Msg) => {
+      remember(m, reason);
       const heard = m.onDismiss;
       if (heard) safe(() => heard(reason));
     };
@@ -404,6 +436,20 @@ export function createStore() {
       tell(gone);
     }
     emit();
+  }
+  /** Adds a message that left to the history: one that was read, not one the app took back. */
+  function remember(m: Msg, reason: DismissReason) {
+    if (cfg.history < 1 || reason === 'code' || m.type === 'loading' || m.type === 'live') return;
+    const past: Past = {
+      id: m.id,
+      type: m.type,
+      title: m.plainTitle || m.title,
+      description: m.plainDescription || m.description.trim(),
+      icon: m.icon,
+      tone: m.tone,
+      at: now(),
+    };
+    state.history = [past, ...state.history.filter((p) => p.id !== m.id)].slice(0, cfg.history);
   }
   function safe(fn: () => void) {
     try { fn(); } catch (error) { report(error); }
