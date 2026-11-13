@@ -4,5 +4,5 @@
     "declaration": false,
     "noEmit": true
   },
-  "include": ["main.ts", "examples/main.ts", "examples/text.d.ts"]
+  "include": ["main.ts", "examples/main.ts", "examples/text.d.ts", "video/wall.ts", "video/hero.ts"]
 }
