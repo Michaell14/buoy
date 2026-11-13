@@ -164,8 +164,8 @@ buoy.promise(exportReport(), {
     icon: 'file',
     expanded: true,
     actions: [
-      { label: 'Open', primary: true, onClick: () => open(file) },
-      { label: 'Show in folder', onClick: () => reveal(file) },
+      { label: 'Open', primary: true, onClick: () => openFile(file) },
+      { label: 'Show in folder', onClick: () => revealFile(file) },
     ],
   }),
   error: (e) => ({ title: "Couldn't export", description: e instanceof Error ? e.message : undefined }),
@@ -468,7 +468,7 @@ Current Chrome, Edge, Firefox and Safari. The gooey split between the pill and t
 
 ## Development
 
-Use Node 24 (`nvm use` reads `.nvmrc`). `npm test` runs the tests and `npm run site` serves the website at http://localhost:4173.
+Use Node 24 (`nvm use` reads `.nvmrc`). `npm test` runs the tests and `npm run site` serves the website at http://localhost:4173. `npm run site:build` also type-checks the React samples on the examples page. `npm run video` records the launch videos into `website/video/out` (it needs Playwright and ffmpeg).
 
 The website's link preview (`og.mp4` and `og.png`) is recorded from `website/og/preview.html`. After changing that page, run `node website/og/render.mjs`, which needs Playwright with Chromium and ffmpeg.
 

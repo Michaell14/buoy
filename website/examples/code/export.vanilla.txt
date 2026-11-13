@@ -12,8 +12,8 @@ function run() {
       expanded: true,
       // With buttons it stays six seconds instead of two.
       actions: [
-        { label: 'Open', primary: true, onClick: () => open(file) },
-        { label: 'Show in folder', onClick: () => reveal(file) },
+        { label: 'Open', primary: true, onClick: () => openFile(file) },
+        { label: 'Show in folder', onClick: () => revealFile(file) },
       ],
     }),
     error: (e) => ({

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Buoy wall</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="site.css">
+<style>
+:root { --ground: #1B1B1D; --ground-2: #232326; --word: #FFFFFF; --word-2: rgba(255, 255, 255, 0.62); --pill: rgba(255, 255, 255, 0.1); }
+:root[data-look="light"] { --ground: #F2F2F3; --ground-2: #F8F8F9; --word: #0B0B0C; --word-2: #5B5B63; --pill: #0B0B0C; }
+html, body { margin: 0; height: 100%; overflow: hidden; }
+body { background: radial-gradient(ellipse 80% 70% at 50% 45%, var(--ground-2), var(--ground)); font-family: Geist, system-ui, sans-serif; --buoy-font: Geist, system-ui, sans-serif; }
+:root[data-look="light"] body { background-color: var(--ground); background-image: radial-gradient(#D8D8DC 1px, transparent 1.3px); background-size: 14px 14px; }
+.stage { position: fixed; inset: 0; overflow: hidden; }
+.wall { position: absolute; left: 50%; top: 0; width: 0; height: 100%; }
+:root[data-tilt="true"] .wall { transform: perspective(2400px) rotateX(50deg) rotateZ(-28deg) scale(1.42); transform-origin: 0 50%; }
+.col { position: absolute; top: 0; width: 336px; margin-left: -168px; display: flex; flex-direction: column; gap: 22px; will-change: transform; }
+.col.is-small { width: 200px; margin-left: -100px; gap: 26px; }
+.cell { position: relative; height: 44px; contain: layout; }
+.cell .buoy { position: absolute; left: 50%; top: 0; }
+.wall .buoy-exp { width: 320px; }
+.wall .buoy-tray { width: 324px; }
+.wall .buoy-title { max-width: 210px; }
+.title { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; opacity: 0; color: var(--word); text-align: center; }
+.title h1 { margin: 0; font-size: 204px; line-height: 0.9; font-weight: 700; letter-spacing: -0.075em; }
+.title p { margin: 0; max-width: 600px; font-size: 30px; line-height: 1.2; font-weight: 500; letter-spacing: -0.03em; color: var(--word-2); }
+.title code { margin-top: 10px; padding: 14px 22px; border-radius: 999px; background: var(--pill); color: #FFFFFF; font: 500 19px/1 "Geist Mono", ui-monospace, monospace; }
+.title code i { font-style: normal; color: #5EEAD4; }
+</style>
+</head>
+<body>
+<div class="stage">
+<div class="wall"></div>
+<div class="title"><h1>Buoy</h1><p>An island for your notifications, promises and background work.</p><code><i>$</i> npm i buoy-ui</code></div>
+</div>
+<script src="wall.js"></script>
+</body>
+</html>
